@@ -1,0 +1,27 @@
+name: Deprem Tahmin Motoru (Updater)
+
+on:
+  schedule:
+    - cron: '*/15 * * * *' # Her 15 dakikada bir çalıştır
+  workflow_dispatch: # Manuel olarak da tetiklenebilmesi için
+
+jobs:
+  update-database:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Repoyu klonla
+      uses: actions/checkout@v3
+      
+    - name: Python kurulumu
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        
+    - name: Gereksinimleri yükle
+      run: |
+        python -m pip install --upgrade pip
+        pip install supabase websockets==15.0 requests beautifulsoup4
+        
+    - name: Tahmin Motorunu (Updater) Çalıştır
+      run: python updater.py
