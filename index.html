@@ -419,6 +419,51 @@
             document.getElementById('plot-container').style.pointerEvents = 'auto';
         });
 
+        // --- SOL ALT KÖŞE (SW) YENİDEN BOYUTLANDIRICI EKLENTİSİ ---
+        const resizerBL = document.createElement('div');
+        resizerBL.style.width = '20px';
+        resizerBL.style.height = '20px';
+        resizerBL.style.position = 'absolute';
+        resizerBL.style.bottom = '0';
+        resizerBL.style.left = '0';
+        resizerBL.style.cursor = 'sw-resize';
+        resizerBL.style.zIndex = '1001';
+        // Görsel ipucu (hafif eğimli çizgiler gibi veya sadece boş alan)
+        resizerBL.style.background = 'linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.2) 45%, rgba(255,255,255,0.2) 55%, transparent 60%)';
+        dragElement.appendChild(resizerBL);
+        
+        resizerBL.addEventListener('mousedown', initResizeBL);
+        
+        function initResizeBL(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            window.addEventListener('mousemove', resizeBL);
+            window.addEventListener('mouseup', stopResizeBL);
+            document.getElementById('plot-container').style.pointerEvents = 'none';
+        }
+        
+        function resizeBL(e) {
+            e.stopPropagation();
+            const rect = dragElement.getBoundingClientRect();
+            const newWidth = rect.right - e.clientX;
+            const newHeight = e.clientY - rect.top;
+            
+            if (newWidth > 300) { 
+                dragElement.style.width = newWidth + 'px';
+                dragElement.style.left = e.clientX + 'px';
+            }
+            if (newHeight > 100) { 
+                dragElement.style.height = newHeight + 'px';
+            }
+        }
+        
+        function stopResizeBL(e) {
+            window.removeEventListener('mousemove', resizeBL);
+            window.removeEventListener('mouseup', stopResizeBL);
+            document.getElementById('plot-container').style.pointerEvents = 'auto';
+        }
+        // --- SOL ALT KÖŞE BOYUTLANDIRICI SONU ---
+
         let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
         dragHeader.onmousedown = dragMouseDown;
 
