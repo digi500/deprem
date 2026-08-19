@@ -385,7 +385,12 @@
         }
 
         function calculatePredictedTime(p, allEarthquakes) {
-            let pastEqs = allEarthquakes.filter(e => new Date(e.date) < new Date(p.created_at));
+            // Eğer tahmin gerçekleşmişse (eşleşmişse), sadece o tahminden önceki depremleri baz al
+            // Eğer tahmin bekliyorsa (eşleşmemişse), elimizdeki en güncel tüm depremleri baz al ki geleceği tahmin etsin!
+            let pastEqs = p.matched_earthquake_id 
+                ? allEarthquakes.filter(e => new Date(e.date) < new Date(p.created_at))
+                : allEarthquakes;
+                
             if (pastEqs.length < 5) return null;
             
             let sample = pastEqs.slice(0, 10);
@@ -396,7 +401,9 @@
             let avgGapMs = totalGapMs / (sample.length - 1);
             let baseTime = new Date(pastEqs[0].date).getTime();
             
-            let predTimeMs = baseTime + (p.target_order * avgGapMs);
+            // Eğer bekleyen tahminse, en son depremin üzerine 1 ortalama aralık ekleyerek gelecekteki tam zamanı bul
+            let multiplier = p.matched_earthquake_id ? p.target_order : 1;
+            let predTimeMs = baseTime + (multiplier * avgGapMs);
             return new Date(predTimeMs);
         }
 
@@ -414,9 +421,10 @@
             let rowsHtml = '';
             const N = data.length;
             
-            // 1. Sadece Bekleyen Tahminleri Ayır
+            // 1. Sadece Bekleyen Tahminleri Ayır ve Kullanıcının İstediği Gibi SADECE 1 TANESİNİ Göster
             const pendingPredictions = allPredictions.filter(p => !p.matched_earthquake_id);
-            const sortedPending = pendingPredictions.sort((a, b) => b.target_order - a.target_order);
+            // Sadece sıradaki en yakın tahmini (1 adet) al
+            const sortedPending = pendingPredictions.sort((a, b) => a.target_order - b.target_order).slice(0, 1);
 
             // Bekleyen tahminleri render et (Gerçek boş, Tahmin dolu, Fark boş)
             for (let i = 0; i < sortedPending.length; i++) {
