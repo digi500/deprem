@@ -191,6 +191,28 @@
     
     <button id="show-panel-btn" onclick="showPanel()">Sismik Aktiviteyi Göster</button>
 
+    <!-- Tahmin Motoru Bilgi Modalı -->
+    <div id="info-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 3000; justify-content: center; align-items: center;">
+        <div style="background: rgba(20, 25, 40, 0.95); border: 1px solid rgba(255,255,255,0.2); padding: 30px; border-radius: 15px; max-width: 600px; color: #fff; position: relative;">
+            <button onclick="document.getElementById('info-modal').style.display='none'" style="position: absolute; top: 15px; right: 20px; background: none; border: none; color: #fff; font-size: 24px; cursor: pointer;">&times;</button>
+            <h2 style="color: #4facfe; margin-top: 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">Tahmin Motoru (V2) Nasıl Çalışır?</h2>
+            <p style="font-size: 14px; line-height: 1.6; color: #ccc;">
+                Tahmin motorumuz, gerçekleşen en son 10 gerçek depremin karakteristik özelliklerini matematiksel olarak analiz ederek sismik aktivitenin gelecekteki rotasını öngörür:
+            </p>
+            <ul style="font-size: 13px; line-height: 1.8; color: #aaa; padding-left: 20px;">
+                <li><strong style="color:#fff">Zaman (Gecikme):</strong> Son 10 deprem arasındaki ortalama zaman aralığı (boşluk) bulunur ve bu süre, gerçekleşen en son gerçek depremin üzerine eklenir.</li>
+                <li><strong style="color:#fff">Kırılma Yönü:</strong> Gerçekleşen depremlerin koordinatları üzerinden Regresyon (Trend) Analizi yapılarak fay hattının gidişat yönü (Doğu/Batı) hesaplanır.</li>
+                <li><strong style="color:#fff">Mesafe (Sıçrama):</strong> Eski depremler arasındaki ortalama kuş uçuşu mesafe hesaplanıp, bir sonraki kırılmanın fay üzerinde ne kadar ileride olacağı öngörülür (Minimum 1 km).</li>
+                <li><strong style="color:#fff">Derinlik (Eğim):</strong> Fay hattının yüzeye mi yaklaştığı yoksa derine mi indiği (Dip eğilimi), geçmiş derinlik hareketlerinin trendine bakılarak tahmin edilir.</li>
+                <li><strong style="color:#fff">Büyüklük (Gerilim/Strain):</strong> Eğer son depremin büyüklüğü, ortalamanın altındaysa "fayda enerji biriktiği" varsayılıp tahmin +0.3 artırılır. Ortalamanın üstündeyse "enerjinin boşaldığı" varsayılıp tahmin -0.2 küçültülür.</li>
+                <li><strong style="color:#fff">3D Üçgen Geometrisi:</strong> Kırılmalar tek bir çizgi değil; ana kırılma noktası (Düğüm 1) ve düzlemi genişleten yanal yansımalar (Düğüm 2 ve 3) olmak üzere üçgen bir alan (Mesh) tarayarak ilerler.</li>
+            </ul>
+            <div style="text-align: right; margin-top: 20px;">
+                <button onclick="document.getElementById('info-modal').style.display='none'" style="background: #4facfe; border: none; color: #000; padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">Anladım</button>
+            </div>
+        </div>
+    </div>
+
     <div id="data-list" style="display: none;">
         <div id="data-list-header">
             <h3 style="display: flex; align-items: center; gap: 10px;">
@@ -207,7 +229,9 @@
                     <tr>
                         <th colspan="5" style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05);">Canlı Veriler</th>
                         <th style="border-bottom: none;"></th>
-                        <th colspan="5" style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05);">Tahminler</th>
+                        <th colspan="5" style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer;" onclick="document.getElementById('info-modal').style.display='flex'">
+                            <span style="color: #4facfe; border-bottom: 1px dashed #4facfe; padding-bottom: 2px;" title="Nasıl Çalışır?">Tahminler ℹ️</span>
+                        </th>
                         <th style="border-bottom: none;"></th>
                         <th colspan="5" style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05);">Doğruluk/Yanlışlık</th>
                     </tr>
