@@ -11,7 +11,20 @@
     <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
+    <script>
+        // Kullanıcının dahiyane fikri: Vercel cache'ini kırmak için otomatik zaman damgası (timestamp) yönlendirmesi
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentTime = new Date().getTime();
+            let v = urlParams.get('v');
+            
+            // Eğer ?v parametresi yoksa veya 5 saniyeden eskiyse, en güncel zaman damgasıyla sayfayı yeniden yükle
+            if (!v || (currentTime - parseInt(v)) > 5000) {
+                // Sadece pathname'i alarak temiz bir yönlendirme yap
+                window.location.replace(window.location.pathname + '?v=' + currentTime);
+            }
+        })();
+    </script>
     <style>
         body {
             margin: 0;
