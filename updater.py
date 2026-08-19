@@ -204,8 +204,9 @@ def update_system():
         
         # Supabase'e ekle
         for p in range(points_to_predict):
+            current_node = (remainder if remainder != 0 else 0) + p + 1
             new_pred = {
-                'target_order': p + 1,
+                'target_order': current_node,
                 'pred_lat': pred_coords[p]['lat'],
                 'pred_lon': pred_coords[p]['lon'],
                 'pred_depth': pred_coords[p]['depth'],
