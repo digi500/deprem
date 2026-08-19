@@ -36,7 +36,7 @@
             border-radius: 12px; 
             color: #ddd; 
             font-size: 13px; 
-            border: 1px solid #4facfe; 
+            border: 1px solid rgba(255,255,255,0.05); 
             z-index: 1000; 
             display: flex; 
             flex-direction: column;
@@ -69,7 +69,7 @@
         #close-btn {
             background: none;
             border: none;
-            color: #4facfe;
+            color: rgba(255,255,255,0.2);
             font-size: 1.5rem;
             cursor: pointer;
             padding: 0;
@@ -112,7 +112,7 @@
         }
         
         th {
-            border-bottom: 1px solid #444; 
+            border-bottom: 1px solid rgba(255,255,255,0.05); 
             text-align: left;
             padding: 8px 15px 8px 0;
             color: #ccc;
@@ -134,8 +134,20 @@
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb {
-            background: #4facfe; 
+            background: rgba(255,255,255,0.15); 
             border-radius: 4px;
+        }
+        
+        .time-col {
+            width: 135px;
+            min-width: 135px;
+            max-width: 135px;
+        }
+        
+        .data-col {
+            width: 60px;
+            min-width: 60px;
+            max-width: 60px;
         }
         
         #loading {
@@ -164,18 +176,18 @@
             <table>
                 <thead>
                     <tr>
-                        <th colspan="5" style="text-align: center; border-bottom: 1px solid #444;">Canlı Veriler</th>
+                        <th colspan="5" style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05);">Canlı Veriler</th>
                         <th style="border-bottom: none;"></th>
-                        <th colspan="5" style="text-align: center; border-bottom: 1px solid #444;">Tahminler</th>
+                        <th colspan="5" style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05);">Tahminler</th>
                         <th style="border-bottom: none;"></th>
-                        <th colspan="5" style="text-align: center; border-bottom: 1px solid #444;">Doğruluk/Yanlışlık</th>
+                        <th colspan="5" style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05);">Doğruluk/Yanlışlık</th>
                     </tr>
                     <tr>
-                        <th>Zaman</th><th>Enlem</th><th>Boylam</th><th>Der.</th><th>Mag</th>
+                        <th class="time-col">Zaman</th><th class="data-col">Enlem</th><th class="data-col">Boylam</th><th class="data-col">Der.</th><th class="data-col">Mag</th>
                         <th style="border-bottom: none; width: 30px; min-width: 30px;"></th> <!-- Ayırıcı Sütun 1 -->
-                        <th>Zaman</th><th>Enlem</th><th>Boylam</th><th>Der.</th><th>Mag</th>
+                        <th class="time-col">Zaman</th><th class="data-col">Enlem</th><th class="data-col">Boylam</th><th class="data-col">Der.</th><th class="data-col">Mag</th>
                         <th style="border-bottom: none; width: 30px; min-width: 30px;"></th> <!-- Ayırıcı Sütun 2 -->
-                        <th>Zaman</th><th>Enlem</th><th>Boylam</th><th>Der.</th><th>Mag</th>
+                        <th class="time-col">Zaman</th><th class="data-col">Enlem</th><th class="data-col">Boylam</th><th class="data-col">Der.</th><th class="data-col">Mag</th>
                     </tr>
                 </thead>
                 <tbody id="data-table-body">
