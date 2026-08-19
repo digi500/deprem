@@ -169,9 +169,9 @@
         }
         
         .time-col {
-            width: 90px;
-            min-width: 90px;
-            max-width: 90px;
+            width: 175px;
+            min-width: 175px;
+            max-width: 175px;
         }
         
         #loading {
@@ -432,7 +432,7 @@
                 let pt = calculatePredictedTime(p, data);
                 let pLabel = `Tahmin ${p.target_order}`;
                 if (pt) {
-                    let ptStr = pt.toISOString().replace('T', ' ').substring(5, 16);
+                    let ptStr = pt.toISOString().replace('T', ' ').substring(0, 19);
                     pLabel = `${ptStr} (${p.target_order})`;
                 }
                 
@@ -453,7 +453,7 @@
             for (let i = N - 1; i >= 0; i--) {
                 let d = data[i];
                 let dStr = d.date.replace('T', ' ');
-                let shortDate = dStr.substring(5, 16); 
+                let shortDate = dStr.substring(0, 19); 
                 let nodeNumber = (i % 3) + 1; 
                 let dateLabel = `<span style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 5px; margin-right: 5px;">${nodeNumber}</span>` + shortDate;
                 
@@ -467,7 +467,7 @@
                     let pt = calculatePredictedTime(matchedPred, data);
                     pLabel = `Tahmin ${matchedPred.target_order}`;
                     if (pt) {
-                        let ptStr = pt.toISOString().replace('T', ' ').substring(5, 16);
+                        let ptStr = pt.toISOString().replace('T', ' ').substring(0, 19);
                         pLabel = `${ptStr} (${matchedPred.target_order})`;
                         let timeDiffMs = new Date(d.date).getTime() - pt.getTime();
                         difTime = formatTimeDiff(timeDiffMs);
