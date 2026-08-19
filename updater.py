@@ -1,7 +1,7 @@
 import os
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import math
 from supabase import create_client, Client
 from fetch_data import fetch_kandilli_data # Assuming this returns the raw JSON list or we can just run it.
@@ -124,12 +124,30 @@ def update_system():
             
             dist_error = haversine(pred['pred_lat'], pred['pred_lon'], real_eq['lat'], real_eq['lon'])
             mag_error = real_eq['mag'] - pred['pred_mag']
+            error_lat = real_eq['lat'] - pred['pred_lat']
+            error_lon = real_eq['lon'] - pred['pred_lon']
+            error_depth = real_eq['depth'] - pred['pred_depth']
+            
+            # Zaman farkı hesabı
+            try:
+                real_time = datetime.fromisoformat(real_eq['date'].replace('Z', '+00:00') if 'Z' in real_eq['date'] else real_eq['date'])
+                if pred.get('pred_date'):
+                    pred_time = datetime.fromisoformat(pred['pred_date'].replace('Z', '+00:00') if 'Z' in pred['pred_date'] else pred['pred_date'])
+                    error_time_mins = (real_time - pred_time).total_seconds() / 60.0
+                else:
+                    error_time_mins = 0
+            except Exception as e:
+                error_time_mins = 0
             
             # Tahmini güncelle
             supabase.table('predictions').update({
                 'matched_earthquake_id': latest_eq_id,
                 'error_distance_km': dist_error,
-                'error_mag': mag_error
+                'error_mag': mag_error,
+                'error_lat': error_lat,
+                'error_lon': error_lon,
+                'error_depth': error_depth,
+                'error_time_mins': error_time_mins
             }).eq('id', pred['id']).execute()
             
             print(f"Tahmin değerlendirildi! Sapma: {dist_error:.2f} km")
@@ -228,15 +246,35 @@ def update_system():
             {'lat': p3_lat, 'lon': p3_lon, 'depth': p3_depth}
         ]
         
+        # Zaman hesaplaması (En yeni depremler üzerinden ortalama boşluk)
+        sample = recent_eqs[-10:]
+        total_gap = timedelta(0)
+        
+        def parse_d(d_str):
+            if not d_str: return datetime.now()
+            return datetime.fromisoformat(d_str.replace('Z', '+00:00') if 'Z' in d_str else d_str)
+
+        for i in range(len(sample) - 1):
+            total_gap += parse_d(sample[i+1]['date']) - parse_d(sample[i]['date'])
+            
+        avg_gap = total_gap / (len(sample) - 1) if len(sample) > 1 else timedelta(minutes=60)
+        base_time = parse_d(last_eq['date'])
+        
         # Supabase'e ekle
         for p in range(points_to_predict):
             current_node = (remainder if remainder != 0 else 0) + p + 1
+            
+            # Node sırasına göre zamanı ileri at
+            multiplier = current_node
+            pred_time = base_time + (avg_gap * multiplier)
+            
             new_pred = {
                 'target_order': current_node,
                 'pred_lat': pred_coords[p]['lat'],
                 'pred_lon': pred_coords[p]['lon'],
                 'pred_depth': pred_coords[p]['depth'],
-                'pred_mag': pred_mag # Gerilim (Strain) analizi ile tahmin edilen büyüklük
+                'pred_mag': pred_mag, # Gerilim (Strain) analizi ile tahmin edilen büyüklük
+                'pred_date': pred_time.isoformat()
             }
             supabase.table('predictions').insert(new_pred).execute()
         

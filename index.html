@@ -384,32 +384,6 @@
             Plotly.newPlot('plot-container', [surface, traceRealMesh, tracePredMesh, trace, tracePredPoints], layout, config);
         }
 
-        function calculatePredictedTime(p, allEarthquakes) {
-            // Eğer tahmin gerçekleşmişse (eşleşmişse), sadece o tahminden önceki depremleri baz al
-            // Eğer tahmin bekliyorsa (eşleşmemişse), elimizdeki en güncel tüm depremleri baz al ki geleceği tahmin etsin!
-            let pastEqs = p.matched_earthquake_id 
-                ? allEarthquakes.filter(e => new Date(e.date) < new Date(p.created_at))
-                : allEarthquakes;
-                
-            if (pastEqs.length < 5) return null;
-            
-            // Ortalama süreyi bulmak için en ESKİ değil, en YENİ (son) 10 depremi almalıyız!
-            let sample = pastEqs.slice(-10);
-            let totalGapMs = 0;
-            for (let i = 0; i < sample.length - 1; i++) {
-                totalGapMs += (new Date(sample[i+1].date).getTime() - new Date(sample[i].date).getTime());
-            }
-            let avgGapMs = totalGapMs / (sample.length - 1);
-            
-            // Temel alınacak zaman en eski deprem değil, EN SON GERÇEKLEŞEN deprem olmalı!
-            let baseTime = new Date(pastEqs[pastEqs.length - 1].date).getTime();
-            
-            // Eğer bekleyen tahminse, en son depremin üzerine 1 ortalama aralık ekleyerek gelecekteki tam zamanı bul
-            let multiplier = p.matched_earthquake_id ? p.target_order : 1;
-            let predTimeMs = baseTime + (multiplier * avgGapMs);
-            return new Date(predTimeMs);
-        }
-
         function formatTimeDiff(ms) {
             let sign = ms > 0 ? '+' : '';
             let absMs = Math.abs(ms);
@@ -432,10 +406,10 @@
             // Bekleyen tahminleri render et (Gerçek boş, Tahmin dolu, Fark boş)
             for (let i = 0; i < sortedPending.length; i++) {
                 let p = sortedPending[i];
-                let pt = calculatePredictedTime(p, data);
                 let pLabel = `Tahmin ${p.target_order}`;
-                if (pt) {
-                    let ptStr = pt.toISOString().replace('T', ' ').substring(0, 19);
+                if (p.pred_date) {
+                    let dObj = new Date(p.pred_date);
+                    let ptStr = p.pred_date.includes('Z') ? dObj.toISOString().replace('T', ' ').substring(0, 19) : p.pred_date.replace('T', ' ').substring(0, 19);
                     pLabel = `${ptStr} (${p.target_order})`;
                 }
                 
@@ -467,12 +441,19 @@
                 let difTime = '-', difLat = '-', difLon = '-', difDep = '-', difMag = '-';
                 
                 if (matchedPred) {
-                    let pt = calculatePredictedTime(matchedPred, data);
                     pLabel = `Tahmin ${matchedPred.target_order}`;
-                    if (pt) {
-                        let ptStr = pt.toISOString().replace('T', ' ').substring(0, 19);
+                    if (matchedPred.pred_date) {
+                        let dObj = new Date(matchedPred.pred_date);
+                        let ptStr = matchedPred.pred_date.includes('Z') ? dObj.toISOString().replace('T', ' ').substring(0, 19) : matchedPred.pred_date.replace('T', ' ').substring(0, 19);
                         pLabel = `${ptStr} (${matchedPred.target_order})`;
-                        let timeDiffMs = new Date(d.date).getTime() - pt.getTime();
+                    }
+                    
+                    if (matchedPred.error_time_mins !== undefined && matchedPred.error_time_mins !== null) {
+                        let ms = matchedPred.error_time_mins * 60000;
+                        difTime = formatTimeDiff(ms);
+                    } else if (matchedPred.pred_date) {
+                        // Fallback in case DB column is null
+                        let timeDiffMs = new Date(d.date).getTime() - new Date(matchedPred.pred_date).getTime();
                         difTime = formatTimeDiff(timeDiffMs);
                     }
                     
@@ -481,10 +462,10 @@
                     pDep = matchedPred.pred_depth.toFixed(1);
                     pMag = matchedPred.pred_mag.toFixed(1);
                     
-                    let dLatVal = d.lat - matchedPred.pred_lat;
-                    let dLonVal = d.lon - matchedPred.pred_lon;
-                    let dDepVal = d.depth - matchedPred.pred_depth;
-                    let dMagVal = d.mag - matchedPred.pred_mag;
+                    let dLatVal = matchedPred.error_lat !== undefined && matchedPred.error_lat !== null ? matchedPred.error_lat : d.lat - matchedPred.pred_lat;
+                    let dLonVal = matchedPred.error_lon !== undefined && matchedPred.error_lon !== null ? matchedPred.error_lon : d.lon - matchedPred.pred_lon;
+                    let dDepVal = matchedPred.error_depth !== undefined && matchedPred.error_depth !== null ? matchedPred.error_depth : d.depth - matchedPred.pred_depth;
+                    let dMagVal = matchedPred.error_mag !== undefined && matchedPred.error_mag !== null ? matchedPred.error_mag : d.mag - matchedPred.pred_mag;
                     
                     difLat = (dLatVal > 0 ? '+' : '') + dLatVal.toFixed(4);
                     difLon = (dLonVal > 0 ? '+' : '') + dLonVal.toFixed(4);
