@@ -220,7 +220,10 @@
                 <span style="font-size: 12px; font-weight: normal; opacity: 0.7;">
                     (Veri Kaynağı: <a href="http://www.koeri.boun.edu.tr/scripts/lst4.asp" target="_blank" style="color: #4facfe; text-decoration: underline;">Kandilli Rasathanesi</a>)
                 </span>
-                <button id="update-btn" onclick="updateEarthquakesManually()" style="background: rgba(79, 172, 254, 0.1); border: 1px solid #4facfe; color: #4facfe; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: all 0.2s;">Depremleri Güncelle</button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button id="update-btn" onclick="updateEarthquakesManually()" style="background: rgba(79, 172, 254, 0.1); border: 1px solid #4facfe; color: #4facfe; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: all 0.2s;">Manuel Kontrol Et</button>
+                    <span id="countdown-timer" style="font-size: 12px; color: #aaa; font-family: monospace;"></span>
+                </div>
             </h3>
             <button id="close-btn" onclick="hidePanel()">&times;</button>
         </div>
@@ -254,101 +257,51 @@
         // Supabase Bağlantı Ayarları
         const SUPABASE_URL = "https://tiykapksaboucamusmbk.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpeWthcGtzYWJvdWNhbXVzbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxNjUyMjEsImV4cCI6MjEwMjc0MTIyMX0.D2YkQaF5Gfn49bsRpuoi3W1upoFfhGxdFQ-pBRW6IAM";
-        
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let currentEqCount = 0;
 
-        async function updateEarthquakes() {
-            const btn = document.getElementById('update-btn');
-            try {
-                if(btn) {
-                    btn.innerText = "Güncelleniyor...";
-                    btn.style.opacity = "0.5";
-                    btn.disabled = true;
-                }
+        function startCountdown() {
+            setInterval(() => {
+                const now = new Date();
+                const minutes = now.getMinutes();
+                const seconds = now.getSeconds();
                 
-                const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('http://www.koeri.boun.edu.tr/scripts/lst4.asp')}`);
-                const data = await response.json();
-                const html = data.contents;
+                // 15 dakikalık periyotlara (900 saniye) göre hesapla
+                const nowSecs = minutes * 60 + seconds;
+                const next15 = Math.ceil((nowSecs + 1) / 900) * 900; 
+                let diff = next15 - nowSecs;
                 
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const preTag = doc.querySelector('pre');
+                if (diff === 900) diff = 0; // Tam o an
                 
-                if (!preTag) throw new Error("Kandilli verisi okunamadı");
-
-                const lines = preTag.textContent.split('\n');
-                const newEarthquakes = [];
+                const m = Math.floor(diff / 60);
+                const s = diff % 60;
                 
-                for (let i = 6; i < lines.length; i++) {
-                    const line = lines[i];
-                    if (line.trim().length === 0) continue;
-                    
-                    try {
-                        const parts = line.trim().split(/\\s+/);
-                        if (parts.length < 8) continue;
+                const timerSpan = document.getElementById('countdown-timer');
+                if (timerSpan) {
+                    if (diff === 0 || diff > 870) { 
+                        // Periyot başından sonraki ilk 30 saniye
+                        timerSpan.innerText = "Motor kontrol ediyor...";
+                        timerSpan.style.color = "#4facfe";
                         
-                        const dateParts = parts[0].split('.');
-                        const timeParts = parts[1].split(':');
-                        const isoStr = `${dateParts[0]}-${dateParts[1]}-${dateParts[2]}T${parts[1]}+03:00`;
-                        const iso_date = new Date(isoStr).toISOString();
-                        
-                        const lat = parseFloat(parts[2]);
-                        const lon = parseFloat(parts[3]);
-                        const depth = parseFloat(parts[4]);
-                        
-                        // Sadece Adalar civarını al (updater.py ile aynı kural)
-                        if (!(lat >= 40.75 && lat <= 40.85 && lon >= 29.00 && lon <= 29.20)) {
-                            continue;
+                        // 15 ve 30. saniyelerde tabloyu otomatik sessizce yenile
+                        if (diff === 885 || diff === 870) { 
+                            loadData(true);
                         }
-
-                        const mag = parts[6] !== '-.-' ? parseFloat(parts[6]) : 0.0;
-                        
-                        let locationParts = [];
-                        for (let j = 8; j < parts.length; j++) {
-                            if (parts[j] === 'İlksel' || parts[j].startsWith('REVIZE')) break;
-                            locationParts.push(parts[j]);
-                        }
-                        const location = locationParts.join(' ');
-                        
-                        newEarthquakes.push({
-                            date: iso_date,
-                            lat: lat,
-                            lon: lon,
-                            depth: depth,
-                            mag: mag,
-                            location: location
-                        });
-                    } catch (e) {}
-                }
-                
-                if (newEarthquakes.length > 0) {
-                    const { data: existing } = await supabaseClient.from('earthquakes').select('date, lat, lon');
-                    const existingSet = new Set((existing || []).map(e => `${e.date}_${e.lat}_${e.lon}`));
-                    
-                    const toInsert = newEarthquakes.filter(eq => !existingSet.has(`${eq.date}_${eq.lat}_${eq.lon}`));
-                    
-                    if (toInsert.length > 0) {
-                        await supabaseClient.from('earthquakes').insert(toInsert);
-                        console.log(`${toInsert.length} yeni deprem Supabase'e eklendi!`);
+                    } else {
+                        timerSpan.innerText = `Sıradaki otomatik kontrole: ${m} dk ${s} sn`;
+                        timerSpan.style.color = "#aaa";
                     }
                 }
-                
-                if(btn) { 
-                    btn.innerText = "Güncellendi"; 
-                    btn.style.opacity = "1";
-                    setTimeout(() => { btn.innerText = "Depremleri Güncelle"; btn.disabled = false; }, 2000);
-                }
-            } catch (e) {
-                console.error("Güncelleme hatası", e);
-                if(btn) { btn.innerText = "Hata"; btn.style.opacity = "1"; btn.disabled = false;}
-            }
+            }, 1000);
         }
 
         async function init() {
-            // Sayfa yüklendiğinde otomatik arka planda güncelle (await yapmıyoruz ki sayfa açılışı yavaşlamasın)
-            updateEarthquakes().then(() => {
-                // Güncelleme bitince tabloyu tekrar render etmek için sessizce init() çağırabiliriz
-                // Ama sonsuz döngü olmaması için ayrı bir loadData() fonksiyonuna ayırmak daha iyi.
+            startCountdown();
+            await loadData(false);
+        }
+
+        async function loadData(isAutoUpdate = false) {ayrı bir loadData() fonksiyonuna ayırmak daha iyi.
                 // Şimdilik sayfayı yenilemek yeterli:
             });
 
@@ -379,6 +332,20 @@
                 return;
             }
 
+            if (currentEqCount > 0 && earthquakes.length > currentEqCount) {
+                const diff = earthquakes.length - currentEqCount;
+                alert(`MOTOR YENİ VERİ ÇEKTİ!\n${diff} yeni deprem oldu ve sisteme eklendi.`);
+            } else if (isAutoUpdate === "manual") {
+                // Eğer kullanıcı butona basmışsa ve yeni bir şey yoksa
+                const btn = document.getElementById('update-btn');
+                if(btn) {
+                    btn.innerText = "Yeni deprem yok";
+                    setTimeout(() => { btn.innerText = "Manuel Kontrol Et"; }, 2000);
+                }
+            }
+            
+            currentEqCount = earthquakes.length;
+
             document.getElementById('loading').style.display = 'none';
             document.getElementById('data-list').style.display = 'flex';
 
@@ -386,10 +353,11 @@
             renderTable(earthquakes, predictions);
         }
 
-        // Güncelleme butonuna basıldığında hem DB'yi günceller hem de tabloyu yeniler
+        // Güncelleme butonuna basıldığında DB'yi günceller (Sadece okur, yazmaz!)
         async function updateEarthquakesManually() {
-            await updateEarthquakes();
-            await loadData();
+            const btn = document.getElementById('update-btn');
+            if(btn) btn.innerText = "Kontrol ediliyor...";
+            await loadData("manual");
         }
 
         function renderPlot(data, allPredictions) {
