@@ -325,10 +325,10 @@ def generate_html():
 </body>
 </html>"""
     
-    with open('3d_goruntuleme.html', 'w', encoding='utf-8') as f:
+    with open('index.html', 'w', encoding='utf-8') as f:
         f.write(html_content)
         
-    print("3d_goruntuleme.html created successfully.")
+    print("index.html created successfully.")
 
 if __name__ == "__main__":
     generate_html()
