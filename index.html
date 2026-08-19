@@ -204,7 +204,6 @@
             const { data: predictions, error: predError } = await supabaseClient
                 .from('predictions')
                 .select('*')
-                .is('matched_earthquake_id', null)
                 .order('created_at', { ascending: true });
 
             if (predError) {
@@ -219,7 +218,10 @@
             renderTable(earthquakes, predictions);
         }
 
-        function renderPlot(data, predictions) {
+        function renderPlot(data, allPredictions) {
+            // Haritada sadece bekleyen (gerçekleşmemiş) tahminleri göster
+            const predictions = allPredictions.filter(p => !p.matched_earthquake_id);
+            
             const lats = data.map(d => d.lat);
             const lons = data.map(d => d.lon);
             const depths = data.map(d => -d.depth); 
@@ -342,50 +344,91 @@
             Plotly.newPlot('plot-container', [surface, traceRealMesh, tracePredMesh, trace, tracePredPoints], layout, config);
         }
 
-        function renderTable(data, predictions) {
+        function renderTable(data, allPredictions) {
             const tbody = document.getElementById('data-table-body');
             let rowsHtml = '';
             const N = data.length;
             
-            // Tahminleri tersten sırala (En uzak gelecek en üstte)
-            const sortedPredictions = [...predictions].sort((a, b) => b.target_order - a.target_order);
+            // 1. Sadece Bekleyen Tahminleri Ayır
+            const pendingPredictions = allPredictions.filter(p => !p.matched_earthquake_id);
+            const sortedPending = pendingPredictions.sort((a, b) => b.target_order - a.target_order);
 
-            // Önce Tahmin Edilen Noktalar (En Üste)
-            for (let i = 0; i < sortedPredictions.length; i++) {
-                let p = sortedPredictions[i];
-                rowsHtml += `<tr style="color: #ff00ff; font-weight: bold;">
-                    <td>Tahmin ${p.target_order}?</td>
-                    <td>${p.pred_lat.toFixed(4)}</td>
-                    <td>${p.pred_lon.toFixed(4)}</td>
-                    <td>${p.pred_depth.toFixed(1)}</td>
-                    <td>${p.pred_mag.toFixed(1)}</td>
+            // Bekleyen tahminleri render et (Gerçek boş, Tahmin dolu, Fark boş)
+            for (let i = 0; i < sortedPending.length; i++) {
+                let p = sortedPending[i];
+                rowsHtml += `<tr style="font-weight: bold;">
+                    <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
                     <td style="border-bottom: none; padding: 0;"></td>
-                    <td></td><td></td><td></td><td></td><td></td>
+                    <td style="color: #ff00ff;">Tahmin ${p.target_order}?</td>
+                    <td style="color: #ff00ff;">${p.pred_lat.toFixed(4)}</td>
+                    <td style="color: #ff00ff;">${p.pred_lon.toFixed(4)}</td>
+                    <td style="color: #ff00ff;">${p.pred_depth.toFixed(1)}</td>
+                    <td style="color: #ff00ff;">${p.pred_mag.toFixed(1)}</td>
                     <td style="border-bottom: none; padding: 0;"></td>
-                    <td></td><td></td><td></td><td></td><td></td>
+                    <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
                 </tr>`;
             }
             
-            // Sonra Gerçek Noktalar (Yeniden Eskiye, N-1'den 0'a doğru)
+            // 2. Gerçek Noktalar (Geçmişe Doğru) ve Eşleşen Tahminleri
             for (let i = N - 1; i >= 0; i--) {
                 let d = data[i];
                 let dStr = d.date.replace('T', ' ');
                 let shortDate = dStr.substring(5, 16); 
-                
-                let nodeNumber = (i % 3) + 1; // 1, 2 veya 3
-                
+                let nodeNumber = (i % 3) + 1; 
                 let dateLabel = `<span style="background: rgba(255,255,255,0.2); color: white; padding: 2px 6px; border-radius: 5px; font-weight: bold; margin-right: 5px;">${nodeNumber}</span>` + shortDate;
                 
+                // Bu gerçek depreme önceden atanmış bir tahmin var mı?
+                let matchedPred = allPredictions.find(p => p.matched_earthquake_id === d.id);
+                
+                let pLabel = '-', pLat = '-', pLon = '-', pDep = '-', pMag = '-';
+                let difLat = '-', difLon = '-', difDep = '-', difMag = '-';
+                let cLat = '', cLon = '', cDep = '', cMag = '';
+                
+                if (matchedPred) {
+                    pLabel = `Tahmin ${matchedPred.target_order}?`;
+                    pLat = matchedPred.pred_lat.toFixed(4);
+                    pLon = matchedPred.pred_lon.toFixed(4);
+                    pDep = matchedPred.pred_depth.toFixed(1);
+                    pMag = matchedPred.pred_mag.toFixed(1);
+                    
+                    let dLatVal = d.lat - matchedPred.pred_lat;
+                    let dLonVal = d.lon - matchedPred.pred_lon;
+                    let dDepVal = d.depth - matchedPred.pred_depth;
+                    let dMagVal = d.mag - matchedPred.pred_mag;
+                    
+                    difLat = (dLatVal > 0 ? '+' : '') + dLatVal.toFixed(4);
+                    difLon = (dLonVal > 0 ? '+' : '') + dLonVal.toFixed(4);
+                    difDep = (dDepVal > 0 ? '+' : '') + dDepVal.toFixed(1);
+                    difMag = (dMagVal > 0 ? '+' : '') + dMagVal.toFixed(1);
+                    
+                    cLat = dLatVal > 0 ? 'color: #ff5555;' : 'color: #55ff55;';
+                    cLon = dLonVal > 0 ? 'color: #ff5555;' : 'color: #55ff55;';
+                    cDep = dDepVal > 0 ? 'color: #ff5555;' : 'color: #55ff55;';
+                    cMag = dMagVal > 0 ? 'color: #ff5555;' : 'color: #55ff55;';
+                }
+                
                 rowsHtml += `<tr>
-                    <td>${dateLabel}</td>
-                    <td>${d.lat.toFixed(4)}</td>
-                    <td>${d.lon.toFixed(4)}</td>
-                    <td>${d.depth.toFixed(1)}</td>
-                    <td>${d.mag.toFixed(1)}</td>
+                    <td style="color: #00ffaa;">${dateLabel}</td>
+                    <td style="color: #00ffaa;">${d.lat.toFixed(4)}</td>
+                    <td style="color: #00ffaa;">${d.lon.toFixed(4)}</td>
+                    <td style="color: #00ffaa;">${d.depth.toFixed(1)}</td>
+                    <td style="color: #00ffaa;">${d.mag.toFixed(1)}</td>
+                    
                     <td style="border-bottom: none; padding: 0;"></td>
-                    <td></td><td></td><td></td><td></td><td></td>
+                    
+                    <td style="color: #ff00ff;">${pLabel}</td>
+                    <td style="color: #ff00ff;">${pLat}</td>
+                    <td style="color: #ff00ff;">${pLon}</td>
+                    <td style="color: #ff00ff;">${pDep}</td>
+                    <td style="color: #ff00ff;">${pMag}</td>
+                    
                     <td style="border-bottom: none; padding: 0;"></td>
-                    <td></td><td></td><td></td><td></td><td></td>
+                    
+                    <td>-</td>
+                    <td style="${cLat} font-weight: bold;">${difLat}</td>
+                    <td style="${cLon} font-weight: bold;">${difLon}</td>
+                    <td style="${cDep} font-weight: bold;">${difDep}</td>
+                    <td style="${cMag} font-weight: bold;">${difMag}</td>
                 </tr>`;
             }
             tbody.innerHTML = rowsHtml;
