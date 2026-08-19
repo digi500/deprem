@@ -217,7 +217,8 @@
             const hoverTexts = data.map(d => `Tarih: ${d.date.replace('T', ' ')}<br>Büyüklük: ${d.mag}<br>Derinlik: ${d.depth} km<br>Konum: ${d.location}`);
 
             const N = data.length;
-            const realPointLabels = data.map((d, i) => i === (N - 1) ? '1' : '');
+            // Gerçek noktalara ait üçgen köşe numarasını belirle (1, 2, 3)
+            const realPointLabels = data.map((d, i) => ((i % 3) + 1).toString());
 
             // Gerçek Noktalar
             const trace = {
@@ -232,11 +233,12 @@
                     line: { color: 'rgba(255, 255, 255, 0.5)', width: 1 }
                 },
                 text: realPointLabels,
-                textfont: { size: 24, color: 'white' },
+                textfont: { size: 18, color: 'white' },
                 textposition: 'top center',
                 hovertext: hoverTexts,
                 hoverinfo: 'text',
-                type: 'scatter3d'
+                type: 'scatter3d',
+                name: 'Gerçek Depremler'
             };
 
             // Kesik Üçgenler (Disjoint)
@@ -299,7 +301,7 @@
                 mode: 'markers+text',
                 marker: { size: 8, color: '#ff00ff', symbol: 'diamond' },
                 text: predTexts, 
-                textfont: { size: 24, color: 'white' },
+                textfont: { size: 24, color: '#ff00ff' },
                 hovertext: predTexts.map(t => 'Tahmin: ' + t), hoverinfo: 'text',
                 type: 'scatter3d', name: 'Tahmin Edilen Noktalar'
             };
@@ -338,9 +340,12 @@
             let rowsHtml = '';
             const N = data.length;
             
+            // Tahminleri tersten sırala (En uzak gelecek en üstte)
+            const sortedPredictions = [...predictions].sort((a, b) => b.target_order - a.target_order);
+
             // Önce Tahmin Edilen Noktalar (En Üste)
-            for (let i = 0; i < predictions.length; i++) {
-                let p = predictions[i];
+            for (let i = 0; i < sortedPredictions.length; i++) {
+                let p = sortedPredictions[i];
                 rowsHtml += `<tr style="color: #ff00ff; font-weight: bold;">
                     <td>Tahmin ${p.target_order}?</td>
                     <td>${p.pred_lat.toFixed(4)}</td>
@@ -356,7 +361,9 @@
                 let dStr = d.date.replace('T', ' ');
                 let shortDate = dStr.substring(5, 16); 
                 
-                let dateLabel = (i === N - 1) ? `<span style="background: white; color: black; padding: 2px 6px; border-radius: 50%; font-weight: bold; margin-right: 5px;">1</span>` + shortDate : shortDate;
+                let nodeNumber = (i % 3) + 1; // 1, 2 veya 3
+                
+                let dateLabel = `<span style="background: rgba(255,255,255,0.2); color: white; padding: 2px 6px; border-radius: 5px; font-weight: bold; margin-right: 5px;">${nodeNumber}</span>` + shortDate;
                 
                 rowsHtml += `<tr>
                     <td>${dateLabel}</td>
