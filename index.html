@@ -419,6 +419,33 @@
             document.getElementById('plot-container').style.pointerEvents = 'auto';
         });
 
+        // --- PANEL DURUMUNU (POS & BOYUT) HAFIZADA TUTMA ---
+        function savePanelState() {
+            localStorage.setItem('panel_left', dragElement.style.left);
+            localStorage.setItem('panel_top', dragElement.style.top);
+            localStorage.setItem('panel_width', dragElement.style.width);
+            localStorage.setItem('panel_height', dragElement.style.height);
+        }
+        
+        function loadPanelState() {
+            const left = localStorage.getItem('panel_left');
+            const top = localStorage.getItem('panel_top');
+            const width = localStorage.getItem('panel_width');
+            const height = localStorage.getItem('panel_height');
+            
+            if (left) dragElement.style.left = left;
+            if (top) dragElement.style.top = top;
+            if (width) dragElement.style.width = width;
+            if (height) dragElement.style.height = height;
+        }
+        
+        loadPanelState(); // Sayfa açıldığında yükle
+        
+        // Boyut değiştiğinde otomatik kaydet
+        const resizeObserver = new ResizeObserver(() => { savePanelState(); });
+        resizeObserver.observe(dragElement);
+        // --- HAFIZA KODU SONU ---
+
         // --- SOL ALT KÖŞE (SW) YENİDEN BOYUTLANDIRICI EKLENTİSİ ---
         const resizerBL = document.createElement('div');
         resizerBL.style.width = '20px';
@@ -493,7 +520,25 @@
             document.onmouseup = null;
             document.onmousemove = null;
             dragHeader.style.cursor = 'grab';
+            savePanelState();
         }
+
+        // --- OTOMATİK SAYFA YENİLEME (Vercel Deploy Takibi) ---
+        let currentLastModified = null;
+        setInterval(() => {
+            // Sitenin arka planında sayfanın güncellenip güncellenmediğini kontrol et
+            fetch(window.location.href, { method: 'HEAD', cache: 'no-store' })
+                .then(response => {
+                    const lastModified = response.headers.get('Last-Modified') || response.headers.get('ETag');
+                    if (currentLastModified === null) {
+                        currentLastModified = lastModified;
+                    } else if (lastModified !== currentLastModified) {
+                        console.log("Yeni sürüm algılandı, sayfa yenileniyor...");
+                        window.location.reload();
+                    }
+                })
+                .catch(err => {});
+        }, 10000); // Her 10 saniyede bir kontrol et
 
         // Sistemi başlat
         init();
