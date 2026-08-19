@@ -2,7 +2,7 @@ name: Deprem Tahmin Motoru (Updater)
 
 on:
   schedule:
-    - cron: '*/15 * * * *' # Her 15 dakikada bir çalıştır
+    - cron: '*/5 * * * *' # Her 5 dakikada bir çalıştır
   workflow_dispatch: # Manuel olarak da tetiklenebilmesi için
 
 jobs:

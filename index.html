@@ -267,25 +267,25 @@
                 const minutes = now.getMinutes();
                 const seconds = now.getSeconds();
                 
-                // 15 dakikalık periyotlara (900 saniye) göre hesapla
+                // 5 dakikalık periyotlara (300 saniye) göre hesapla
                 const nowSecs = minutes * 60 + seconds;
-                const next15 = Math.ceil((nowSecs + 1) / 900) * 900; 
-                let diff = next15 - nowSecs;
+                const next5 = Math.ceil((nowSecs + 1) / 300) * 300; 
+                let diff = next5 - nowSecs;
                 
-                if (diff === 900) diff = 0; // Tam o an
+                if (diff === 300) diff = 0; // Tam o an
                 
                 const m = Math.floor(diff / 60);
                 const s = diff % 60;
                 
                 const timerSpan = document.getElementById('countdown-timer');
                 if (timerSpan) {
-                    if (diff === 0 || diff > 870) { 
+                    if (diff === 0 || diff > 270) { 
                         // Periyot başından sonraki ilk 30 saniye
                         timerSpan.innerText = "Motor kontrol ediyor...";
                         timerSpan.style.color = "#4facfe";
                         
                         // 15 ve 30. saniyelerde tabloyu otomatik sessizce yenile
-                        if (diff === 885 || diff === 870) { 
+                        if (diff === 285 || diff === 270) { 
                             loadData(true);
                         }
                     } else {
