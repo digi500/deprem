@@ -223,7 +223,7 @@
             // Gerçek Noktalar
             const trace = {
                 x: lons, y: lats, z: depths,
-                mode: 'markers+text',
+                mode: 'markers',
                 marker: {
                     size: mags.map(m => m * 4), 
                     color: depths, 
@@ -232,9 +232,6 @@
                     symbol: 'circle',
                     line: { color: 'rgba(255, 255, 255, 0.5)', width: 1 }
                 },
-                text: realPointLabels,
-                textfont: { size: 18, color: 'white' },
-                textposition: 'top center',
                 hovertext: hoverTexts,
                 hoverinfo: 'text',
                 type: 'scatter3d',
