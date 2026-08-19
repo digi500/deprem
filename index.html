@@ -393,13 +393,16 @@
                 
             if (pastEqs.length < 5) return null;
             
-            let sample = pastEqs.slice(0, 10);
+            // Ortalama süreyi bulmak için en ESKİ değil, en YENİ (son) 10 depremi almalıyız!
+            let sample = pastEqs.slice(-10);
             let totalGapMs = 0;
             for (let i = 0; i < sample.length - 1; i++) {
-                totalGapMs += (new Date(sample[i].date).getTime() - new Date(sample[i+1].date).getTime());
+                totalGapMs += (new Date(sample[i+1].date).getTime() - new Date(sample[i].date).getTime());
             }
             let avgGapMs = totalGapMs / (sample.length - 1);
-            let baseTime = new Date(pastEqs[0].date).getTime();
+            
+            // Temel alınacak zaman en eski deprem değil, EN SON GERÇEKLEŞEN deprem olmalı!
+            let baseTime = new Date(pastEqs[pastEqs.length - 1].date).getTime();
             
             // Eğer bekleyen tahminse, en son depremin üzerine 1 ortalama aralık ekleyerek gelecekteki tam zamanı bul
             let multiplier = p.matched_earthquake_id ? p.target_order : 1;
