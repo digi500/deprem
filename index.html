@@ -157,7 +157,7 @@
             <button id="close-btn" onclick="hidePanel()">&times;</button>
         </div>
         <div id="data-list-content">
-            <div class="status">⚡ Canlı Supabase Bağlantısı Aktif</div>
+            <div class="status">⚡ Canlı Veriler</div>
             <table>
                 <thead>
                     <tr>
@@ -319,7 +319,7 @@
             const layout = {
                 margin: { l: 0, r: 0, b: 0, t: 0 },
                 paper_bgcolor: '#050510',
-                dragmode: 'pan',
+                dragmode: 'turntable',
                 scene: {
                     xaxis: { title: 'Boylam (Longitude)', color: '#aaaaaa', gridcolor: '#222233', zerolinecolor: '#444455', showbackground: false },
                     yaxis: { title: 'Enlem (Latitude)', color: '#aaaaaa', gridcolor: '#222233', zerolinecolor: '#444455', showbackground: false },
@@ -388,6 +388,7 @@
 
         function dragMouseDown(e) {
             e.preventDefault();
+            e.stopPropagation();
             pos3 = e.clientX;
             pos4 = e.clientY;
             document.onmouseup = closeDragElement;
