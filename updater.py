@@ -130,13 +130,20 @@ def update_system():
             
             # Zaman farkı hesabı
             try:
-                real_time = datetime.fromisoformat(real_eq['date'].replace('Z', '+00:00') if 'Z' in real_eq['date'] else real_eq['date'])
+                def to_naive(dt_str):
+                    dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+                    if dt.tzinfo is not None:
+                        dt = dt.replace(tzinfo=None)
+                    return dt
+                    
+                real_time = to_naive(real_eq['date'])
                 if pred.get('pred_date'):
-                    pred_time = datetime.fromisoformat(pred['pred_date'].replace('Z', '+00:00') if 'Z' in pred['pred_date'] else pred['pred_date'])
+                    pred_time = to_naive(pred['pred_date'])
                     error_time_mins = (real_time - pred_time).total_seconds() / 60.0
                 else:
                     error_time_mins = 0
             except Exception as e:
+                print("Time error:", e)
                 error_time_mins = 0
             
             # Tahmini güncelle
