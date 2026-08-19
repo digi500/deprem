@@ -405,10 +405,10 @@
             for (let i = 0; i < sortedPending.length; i++) {
                 let p = sortedPending[i];
                 let pt = calculatePredictedTime(p, data);
-                let pLabel = `Tahmin ${p.target_order}?`;
+                let pLabel = `Tahmin ${p.target_order}`;
                 if (pt) {
                     let ptStr = pt.toISOString().replace('T', ' ').substring(5, 16);
-                    pLabel = `${p.target_order}? (${ptStr})`;
+                    pLabel = `${ptStr} (${p.target_order})`;
                 }
                 
                 rowsHtml += `<tr>
@@ -440,10 +440,10 @@
                 
                 if (matchedPred) {
                     let pt = calculatePredictedTime(matchedPred, data);
-                    pLabel = `Tahmin ${matchedPred.target_order}?`;
+                    pLabel = `Tahmin ${matchedPred.target_order}`;
                     if (pt) {
                         let ptStr = pt.toISOString().replace('T', ' ').substring(5, 16);
-                        pLabel = `${matchedPred.target_order}? (${ptStr})`;
+                        pLabel = `${ptStr} (${matchedPred.target_order})`;
                         let timeDiffMs = new Date(d.date).getTime() - pt.getTime();
                         difTime = formatTimeDiff(timeDiffMs);
                     }
