@@ -162,6 +162,7 @@
                 <thead>
                     <tr>
                         <th>Zaman/Durum</th><th>Enlem</th><th>Boylam</th><th>Der.</th><th>Mag</th>
+                        <th>Zaman/Durum</th><th>Enlem</th><th>Boylam</th><th>Der.</th><th>Mag</th>
                     </tr>
                 </thead>
                 <tbody id="data-table-body">
@@ -349,6 +350,11 @@
                     <td>${p.pred_lon.toFixed(4)}</td>
                     <td>${p.pred_depth.toFixed(1)}</td>
                     <td>${p.pred_mag.toFixed(1)}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
                 </tr>`;
             }
             
@@ -368,6 +374,11 @@
                     <td>${d.lon.toFixed(4)}</td>
                     <td>${d.depth.toFixed(1)}</td>
                     <td>${d.mag.toFixed(1)}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
                 </tr>`;
             }
             tbody.innerHTML = rowsHtml;
