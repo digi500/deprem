@@ -301,14 +301,7 @@
             await loadData(false);
         }
 
-        async function loadData(isAutoUpdate = false) {ayrı bir loadData() fonksiyonuna ayırmak daha iyi.
-                // Şimdilik sayfayı yenilemek yeterli:
-            });
-
-            await loadData();
-        }
-
-        async function loadData() {
+        async function loadData(isAutoUpdate = false) {
             // 1. Depremleri Çek
             const { data: earthquakes, error: eqError } = await supabaseClient
                 .from('earthquakes')
