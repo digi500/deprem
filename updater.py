@@ -138,63 +138,89 @@ def update_system():
     pending_preds_res = supabase.table('predictions').select('*').is_('matched_earthquake_id', 'null').execute()
     
     if len(pending_preds_res.data) == 0:
-        print("Yeni tahmin üretiliyor...")
-        # Algoritma:
-        # Geçmişteki ortalama hata payını bul (Self-correcting bias)
-        matched_preds_res = supabase.table('predictions').select('*').not_.is_('error_distance_km', 'null').execute()
+        print("Yeni tahmin üretiliyor (V2 Algoritması)...")
         
-        avg_err_lat = 0
-        avg_err_lon = 0
+        look_back = min(10, N)
+        recent_eqs = db_eqs[-look_back:]
         
-        if len(matched_preds_res.data) > 0:
-            # Sadece son 5 tahmini al
-            recent_matched = matched_preds_res.data[-5:]
-            for mp in recent_matched:
-                # Eşleşen depremi bul (veritabanından veya basitçe sapmadan)
-                pass # Gelişmiş hata düzeltmesi eklenebilir. Şimdilik basit tutuyoruz.
-                
-        # Ortalama adım (üçgen boyutu)
+        # 1. Regresyon ile Fay Doğrultusu (Strike) hesabı
+        sum_x = 0; sum_y = 0; sum_xy = 0; sum_xx = 0
+        for eq in recent_eqs:
+            sum_x += eq['lon']
+            sum_y += eq['lat']
+            sum_xy += eq['lon'] * eq['lat']
+            sum_xx += eq['lon'] ** 2
+            
+        n_pts = len(recent_eqs)
+        mean_x = sum_x / n_pts
+        mean_y = sum_y / n_pts
+        
+        denominator = (sum_xx - n_pts * mean_x**2)
+        if denominator == 0:
+            slope = 0
+        else:
+            slope = (sum_xy - n_pts * mean_x * mean_y) / denominator
+            
+        # Doğrultu Vektörü (Normalize edilmiş)
+        dir_lon = 1.0
+        dir_lat = slope
+        length = math.sqrt(dir_lon**2 + dir_lat**2)
+        dir_lon /= length
+        dir_lat /= length
+        
+        # Gidiş yönünü belirle (Doğuya mı Batıya mı gidiyor?)
+        if recent_eqs[-1]['lon'] - recent_eqs[0]['lon'] < 0:
+            dir_lon = -dir_lon
+            dir_lat = -dir_lat
+            
+        # Ortalama Derinlik Eğilimi (Dip)
+        depth_diff = recent_eqs[-1]['depth'] - recent_eqs[0]['depth']
+        dir_depth = depth_diff / n_pts
+        
+        # 2. Kopma Mesafesi (Minimum Boyut)
         total_dist = 0
-        for i in range(1, N):
-            total_dist += haversine(db_eqs[i-1]['lat'], db_eqs[i-1]['lon'], db_eqs[i]['lat'], db_eqs[i]['lon'])
-        avg_step_km = total_dist / (N - 1) if N > 1 else 1.0
+        for i in range(1, n_pts):
+            total_dist += haversine(recent_eqs[i-1]['lat'], recent_eqs[i-1]['lon'], recent_eqs[i]['lat'], recent_eqs[i]['lon'])
+        avg_step_km = total_dist / (n_pts - 1) if n_pts > 1 else 1.0
         
-        # Son yön (Son 4 nokta arası)
-        look_back = min(4, N-1)
-        dir_lat = db_eqs[-1]['lat'] - db_eqs[-1 - look_back]['lat']
-        dir_lon = db_eqs[-1]['lon'] - db_eqs[-1 - look_back]['lon']
-        dir_depth = db_eqs[-1]['depth'] - db_eqs[-1 - look_back]['depth']
+        # Alt limit (Fay kırığı üst üste binemez, en az 1 km olmalı)
+        step_km = max(avg_step_km, 1.0) 
+        step_deg = step_km / 111.0
         
-        # Normalize
-        dir_len = math.sqrt(dir_lat**2 + dir_lon**2 + dir_depth**2)
-        if dir_len == 0:
-            dir_lat, dir_lon, dir_depth, dir_len = 0.01, 0, 0, 0.01
-        dir_lat /= dir_len
-        dir_lon /= dir_len
-        dir_depth /= dir_len
+        # 3. Gerilim (Strain) ve Magnitude Tahmini
+        avg_mag = sum(eq['mag'] for eq in recent_eqs) / n_pts
+        last_mag = recent_eqs[-1]['mag']
         
-        # Derece cinsinden ortalama adım hesabı (1 derece ~ 111 km)
-        avg_step_deg = avg_step_km / 111.0
+        if last_mag < avg_mag:
+            pred_mag = avg_mag + 0.3 # Enerji birikiyor
+        else:
+            pred_mag = max(avg_mag - 0.2, 1.0) # Enerji boşaldı (artçı)
+            
+        pred_mag = round(pred_mag, 1)
         
-        last_eq = db_eqs[-1]
+        # 4. 3D Tahmin Noktalarını Yerleştir
+        last_eq = recent_eqs[-1]
         
         remainder = N % 3
         points_to_predict = 3 if remainder == 0 else (3 - remainder)
         
-        # Nokta 1: İleri
-        p1_lat = last_eq['lat'] + (dir_lat * avg_step_deg)
-        p1_lon = last_eq['lon'] + (dir_lon * avg_step_deg)
-        p1_depth = last_eq['depth'] + (dir_depth * avg_step_deg) * 111.0 # Derinlik km
+        # P1: İleri doğru ana kırılma noktası
+        p1_lat = last_eq['lat'] + (dir_lat * step_deg)
+        p1_lon = last_eq['lon'] + (dir_lon * step_deg)
+        p1_depth = last_eq['depth'] + dir_depth
         
-        # Nokta 2: İleri Sağ
-        p2_lat = p1_lat + (dir_lon * avg_step_deg * 0.8)
-        p2_lon = p1_lon + (-dir_lat * avg_step_deg * 0.8)
-        p2_depth = p1_depth + 1.0
+        # P2 ve P3: Fay düzlemini genişleten yanal kırıklar
+        perp_lat = -dir_lon
+        perp_lon = dir_lat
+        width_deg = step_deg * 0.6
         
-        # Nokta 3: İleri Sol
-        p3_lat = p1_lat + (-dir_lon * avg_step_deg * 0.8)
-        p3_lon = p1_lon + (dir_lat * avg_step_deg * 0.8)
-        p3_depth = p1_depth - 1.0
+        p2_lat = p1_lat + (perp_lat * width_deg)
+        p2_lon = p1_lon + (perp_lon * width_deg)
+        p2_depth = p1_depth + 1.5 # Derine doğru eğim
+        
+        p3_lat = p1_lat - (perp_lat * width_deg)
+        p3_lon = p1_lon - (perp_lon * width_deg)
+        p3_depth = p1_depth - 1.5 # Yüzeye doğru eğim
         
         pred_coords = [
             {'lat': p1_lat, 'lon': p1_lon, 'depth': p1_depth},
@@ -210,7 +236,7 @@ def update_system():
                 'pred_lat': pred_coords[p]['lat'],
                 'pred_lon': pred_coords[p]['lon'],
                 'pred_depth': pred_coords[p]['depth'],
-                'pred_mag': last_eq['mag'] # Tahmini büyüklük
+                'pred_mag': pred_mag # Gerilim (Strain) analizi ile tahmin edilen büyüklük
             }
             supabase.table('predictions').insert(new_pred).execute()
         
