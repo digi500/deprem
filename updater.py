@@ -93,7 +93,7 @@ def update_system():
     existing_eqs_res = supabase.table('earthquakes').select('date, lat, lon').execute()
     existing_set = set(f"{e['date']}_{e['lat']}_{e['lon']}" for e in existing_eqs_res.data)
 
-    all_db_eqs = []
+    new_eqs_this_run = []
     
     for eq in earthquakes:
         eq_key = f"{eq['date']}_{eq['lat']}_{eq['lon']}"
@@ -102,8 +102,11 @@ def update_system():
             res = supabase.table('earthquakes').insert(eq).execute()
             if len(res.data) > 0:
                 new_eq_added = True
-                latest_eq_id = res.data[0]['id']
+                new_eqs_this_run.append(res.data[0])
                 print(f"YENİ DEPREM EKLENDİ: {eq['date']} Mag: {eq['mag']}")
+                
+    # Yeni depremleri kronolojik sıraya diz (eskiden yeniye)
+    new_eqs_this_run.sort(key=lambda x: x['date'])
         
     # Tüm depremleri veritabanından çekip morfolojik analiz yapalım
     db_eqs_res = supabase.table('earthquakes').select('*').order('date').execute()
@@ -114,50 +117,54 @@ def update_system():
         print("Tahmin için yeterli veri yok.")
         return
         
-    # 3. Eğer yeni deprem olduysa, açıkta bekleyen tahminlerimizi kontrol et ve hatayı hesapla
-    if new_eq_added and latest_eq_id:
-        # Eşleşmemiş en eski tahmini bul
-        unmatched_pred_res = supabase.table('predictions').select('*').is_('matched_earthquake_id', 'null').order('created_at').limit(1).execute()
-        if len(unmatched_pred_res.data) > 0:
-            pred = unmatched_pred_res.data[0]
-            real_eq = db_eqs[-1] # En son deprem
-            
-            dist_error = haversine(pred['pred_lat'], pred['pred_lon'], real_eq['lat'], real_eq['lon'])
-            mag_error = real_eq['mag'] - pred['pred_mag']
-            error_lat = real_eq['lat'] - pred['pred_lat']
-            error_lon = real_eq['lon'] - pred['pred_lon']
-            error_depth = real_eq['depth'] - pred['pred_depth']
-            
-            # Zaman farkı hesabı
-            try:
-                def to_naive(dt_str):
-                    dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
-                    if dt.tzinfo is not None:
-                        dt = dt.replace(tzinfo=None)
-                    return dt
-                    
-                real_time = to_naive(real_eq['date'])
-                if pred.get('pred_date'):
-                    pred_time = to_naive(pred['pred_date'])
-                    error_time_mins = (real_time - pred_time).total_seconds() / 60.0
-                else:
+    # 3. Eğer yeni deprem(ler) olduysa, açıkta bekleyen tahminlerimizi sırayla kontrol et ve eşleştir
+    if new_eqs_this_run:
+        # Eşleşmemiş tüm tahminleri eskiden yeniye bul
+        unmatched_preds_res = supabase.table('predictions').select('*').is_('matched_earthquake_id', 'null').order('created_at').execute()
+        unmatched_preds = unmatched_preds_res.data
+        
+        for i, real_eq in enumerate(new_eqs_this_run):
+            if i < len(unmatched_preds):
+                pred = unmatched_preds[i]
+                
+                dist_error = haversine(pred['pred_lat'], pred['pred_lon'], real_eq['lat'], real_eq['lon'])
+                mag_error = real_eq['mag'] - pred['pred_mag']
+                error_lat = real_eq['lat'] - pred['pred_lat']
+                error_lon = real_eq['lon'] - pred['pred_lon']
+                error_depth = real_eq['depth'] - pred['pred_depth']
+                
+                # Zaman farkı hesabı
+                try:
+                    def to_naive(dt_str):
+                        dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+                        if dt.tzinfo is not None:
+                            dt = dt.replace(tzinfo=None)
+                        return dt
+                        
+                    real_time = to_naive(real_eq['date'])
+                    if pred.get('pred_date'):
+                        pred_time = to_naive(pred['pred_date'])
+                        error_time_mins = (real_time - pred_time).total_seconds() / 60.0
+                    else:
+                        error_time_mins = 0
+                except Exception as e:
+                    print("Time error:", e)
                     error_time_mins = 0
-            except Exception as e:
-                print("Time error:", e)
-                error_time_mins = 0
-            
-            # Tahmini güncelle
-            supabase.table('predictions').update({
-                'matched_earthquake_id': latest_eq_id,
-                'error_distance_km': dist_error,
-                'error_mag': mag_error,
-                'error_lat': error_lat,
-                'error_lon': error_lon,
-                'error_depth': error_depth,
-                'error_time_mins': error_time_mins
-            }).eq('id', pred['id']).execute()
-            
-            print(f"Tahmin değerlendirildi! Sapma: {dist_error:.2f} km")
+                
+                # Tahmini güncelle
+                supabase.table('predictions').update({
+                    'matched_earthquake_id': real_eq['id'],
+                    'error_distance_km': dist_error,
+                    'error_mag': mag_error,
+                    'error_lat': error_lat,
+                    'error_lon': error_lon,
+                    'error_depth': error_depth,
+                    'error_time_mins': error_time_mins
+                }).eq('id', pred['id']).execute()
+                
+                print(f"Tahmin değerlendirildi! ({real_eq['date']} -> Tahmin {pred['target_order']}) Sapma: {dist_error:.2f} km")
+            else:
+                print(f"Uyarı: {real_eq['date']} tarihli deprem için hazırda bekleyen bir tahmin yoktu, boş geçiliyor.")
 
     # 4. Açıkta (eşleşmemiş) tahmin var mı kontrol et, yoksa yeni tahmin üret
     pending_preds_res = supabase.table('predictions').select('*').is_('matched_earthquake_id', 'null').execute()
@@ -269,10 +276,10 @@ def update_system():
         
         # Supabase'e ekle
         for p in range(points_to_predict):
-            current_node = (remainder if remainder != 0 else 0) + p + 1
+            current_node = ((N + p) % 3) + 1
             
-            # Node sırasına göre zamanı ileri at
-            multiplier = current_node
+            # Sırasıyla zamanı ileri at
+            multiplier = p + 1
             pred_time = base_time + (avg_gap * multiplier)
             
             new_pred = {
