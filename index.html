@@ -624,20 +624,20 @@
         }
 
         // --- OTOMATİK SAYFA YENİLEME (Vercel Deploy Takibi) ---
-        let currentLastModified = null;
+        let currentHTML = null;
         setInterval(() => {
-            // Sitenin arka planında sayfanın güncellenip güncellenmediğini kontrol et
-            fetch(window.location.href, { method: 'HEAD', cache: 'no-store' })
-                .then(response => {
-                    const lastModified = response.headers.get('Last-Modified') || response.headers.get('ETag');
-                    if (currentLastModified === null) {
-                        currentLastModified = lastModified;
-                    } else if (lastModified !== currentLastModified) {
-                        console.log("Yeni sürüm algılandı, sayfa yenileniyor...");
-                        window.location.href = window.location.pathname + '?v=' + new Date().getTime();
-                    }
-                })
-                .catch(err => {});
+            // Vercel başlıkları gizleyebildiği için ETag yerine direkt dosyanın içeriğini (saf halini) kontrol ediyoruz
+            fetch(window.location.pathname + '?ping=' + new Date().getTime())
+            .then(res => res.text())
+            .then(html => {
+                if (!currentHTML) {
+                    currentHTML = html;
+                } else if (html !== currentHTML) {
+                    console.log("Yeni kod algılandı, sayfa yenileniyor...");
+                    window.location.href = window.location.pathname + '?v=' + new Date().getTime();
+                }
+            })
+            .catch(err => {});
         }, 10000); // Her 10 saniyede bir kontrol et
 
         // Sistemi başlat
