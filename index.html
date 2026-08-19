@@ -2,8 +2,11 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marmara / Adalar Sismik Aktivite & Tahmin Sistemi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>3D Deprem Simülasyonu</title>
     <!-- Plotly.js -->
     <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
     <!-- Supabase JS Client -->
@@ -111,7 +114,7 @@
         th {
             border-bottom: 1px solid #444; 
             text-align: left;
-            padding: 12px 15px 12px 0;
+            padding: 8px 15px 8px 0;
             color: #ccc;
             font-weight: normal;
             white-space: nowrap;
@@ -618,7 +621,7 @@
                         currentLastModified = lastModified;
                     } else if (lastModified !== currentLastModified) {
                         console.log("Yeni sürüm algılandı, sayfa yenileniyor...");
-                        window.location.reload();
+                        window.location.href = window.location.pathname + '?v=' + new Date().getTime();
                     }
                 })
                 .catch(err => {});
