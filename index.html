@@ -344,6 +344,31 @@
             Plotly.newPlot('plot-container', [surface, traceRealMesh, tracePredMesh, trace, tracePredPoints], layout, config);
         }
 
+        function calculatePredictedTime(p, allEarthquakes) {
+            let pastEqs = allEarthquakes.filter(e => new Date(e.date) < new Date(p.created_at));
+            if (pastEqs.length < 5) return null;
+            
+            let sample = pastEqs.slice(0, 10);
+            let totalGapMs = 0;
+            for (let i = 0; i < sample.length - 1; i++) {
+                totalGapMs += (new Date(sample[i].date).getTime() - new Date(sample[i+1].date).getTime());
+            }
+            let avgGapMs = totalGapMs / (sample.length - 1);
+            let baseTime = new Date(pastEqs[0].date).getTime();
+            
+            let predTimeMs = baseTime + (p.target_order * avgGapMs);
+            return new Date(predTimeMs);
+        }
+
+        function formatTimeDiff(ms) {
+            let sign = ms > 0 ? '+' : '';
+            let absMs = Math.abs(ms);
+            let mins = Math.round(absMs / 60000);
+            if (mins < 60) return sign + mins + ' dk';
+            let hours = (mins / 60).toFixed(1);
+            return sign + hours + ' sa';
+        }
+
         function renderTable(data, allPredictions) {
             const tbody = document.getElementById('data-table-body');
             let rowsHtml = '';
@@ -356,10 +381,17 @@
             // Bekleyen tahminleri render et (Gerçek boş, Tahmin dolu, Fark boş)
             for (let i = 0; i < sortedPending.length; i++) {
                 let p = sortedPending[i];
+                let pt = calculatePredictedTime(p, data);
+                let pLabel = `Tahmin ${p.target_order}?`;
+                if (pt) {
+                    let ptStr = pt.toISOString().replace('T', ' ').substring(5, 16);
+                    pLabel = `${p.target_order}? (${ptStr})`;
+                }
+                
                 rowsHtml += `<tr style="font-weight: bold;">
                     <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
                     <td style="border-bottom: none; padding: 0;"></td>
-                    <td style="color: #ff00ff;">Tahmin ${p.target_order}?</td>
+                    <td style="color: #ff00ff; font-size: 13px;">${pLabel}</td>
                     <td style="color: #ff00ff;">${p.pred_lat.toFixed(4)}</td>
                     <td style="color: #ff00ff;">${p.pred_lon.toFixed(4)}</td>
                     <td style="color: #ff00ff;">${p.pred_depth.toFixed(1)}</td>
@@ -381,11 +413,20 @@
                 let matchedPred = allPredictions.find(p => p.matched_earthquake_id === d.id);
                 
                 let pLabel = '-', pLat = '-', pLon = '-', pDep = '-', pMag = '-';
-                let difLat = '-', difLon = '-', difDep = '-', difMag = '-';
-                let cLat = '', cLon = '', cDep = '', cMag = '';
+                let difTime = '-', difLat = '-', difLon = '-', difDep = '-', difMag = '-';
+                let cTime = '', cLat = '', cLon = '', cDep = '', cMag = '';
                 
                 if (matchedPred) {
+                    let pt = calculatePredictedTime(matchedPred, data);
                     pLabel = `Tahmin ${matchedPred.target_order}?`;
+                    if (pt) {
+                        let ptStr = pt.toISOString().replace('T', ' ').substring(5, 16);
+                        pLabel = `${matchedPred.target_order}? (${ptStr})`;
+                        let timeDiffMs = new Date(d.date).getTime() - pt.getTime();
+                        difTime = formatTimeDiff(timeDiffMs);
+                        cTime = timeDiffMs > 0 ? 'color: #ff5555;' : 'color: #55ff55;'; // Geciktiyse kırmızı
+                    }
+                    
                     pLat = matchedPred.pred_lat.toFixed(4);
                     pLon = matchedPred.pred_lon.toFixed(4);
                     pDep = matchedPred.pred_depth.toFixed(1);
@@ -416,7 +457,7 @@
                     
                     <td style="border-bottom: none; padding: 0;"></td>
                     
-                    <td style="color: #ff00ff;">${pLabel}</td>
+                    <td style="color: #ff00ff; font-size: 13px;">${pLabel}</td>
                     <td style="color: #ff00ff;">${pLat}</td>
                     <td style="color: #ff00ff;">${pLon}</td>
                     <td style="color: #ff00ff;">${pDep}</td>
@@ -424,7 +465,7 @@
                     
                     <td style="border-bottom: none; padding: 0;"></td>
                     
-                    <td>-</td>
+                    <td style="${cTime} font-weight: bold;">${difTime}</td>
                     <td style="${cLat} font-weight: bold;">${difLat}</td>
                     <td style="${cLon} font-weight: bold;">${difLon}</td>
                     <td style="${cDep} font-weight: bold;">${difDep}</td>
