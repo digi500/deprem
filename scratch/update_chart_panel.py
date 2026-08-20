@@ -126,10 +126,17 @@ html = f"""<!DOCTYPE html>
             hovertext: names,
             type: 'bar',
             marker: {{
-                color: ['rgba(255,255,255,0.2)', 'rgba(79,172,254,0.5)', 'rgba(255,0,255,0.7)', 'rgba(0,255,100,0.7)', 'rgba(255,170,0,0.7)'],
+                color: [
+                    'rgba(255,255,255,0.2)', 
+                    'rgba(79,172,254,0.5)', 
+                    'rgba(255,0,255,0.7)', 
+                    'rgba(150,0,255,0.7)', 
+                    'rgba(0,255,100,0.7)', 
+                    'rgba(255,170,0,0.7)'
+                ],
                 line: {{
-                    color: ['#fff', '#4facfe', '#ff00ff', '#00ff64', '#ffaa00'],
-                    width: 2
+                    color: 'rgba(255,255,255,0.2)',
+                    width: 1
                 }}
             }}
         }};
