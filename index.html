@@ -292,7 +292,9 @@
             if (isEngineRunning) return; // Motor zaten çalışıyorsa tekrar tetikleme
             
             try {
-                const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('http://www.koeri.boun.edu.tr/scripts/lst4.asp')}&cb=${Date.now()}`);
+                // allorigins önbelleğini (cache) kırmak için Kandilli URL'sinin sonuna sahte bir timestamp ekliyoruz
+                const targetUrl = 'http://www.koeri.boun.edu.tr/scripts/lst4.asp?rnd=' + Date.now();
+                const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
                 const html = await response.text();
                 
                 const parser = new DOMParser();
@@ -312,17 +314,14 @@
                         const parts = line.trim().split(/\s+/);
                         if (parts.length < 8) continue;
                         
-                        const dateParts = parts[0].split('.');
-                        // JS timezone'u düzgün parselayabilsin diye +03:00 ekliyoruz
-                        const isoStr = `${dateParts[0]}-${dateParts[1]}-${dateParts[2]}T${parts[1]}+03:00`;
-                        const dateObj = new Date(isoStr);
-                        const iso_date = dateObj.toISOString();
+                        // Kandilli Formatı: 2026.08.20 03:28:11 -> Bunu Supabase formatına (2026-08-20 03:28:11) çevir
+                        const date_str = parts[0].replace(/\./g, '-') + ' ' + parts[1];
                         
                         const lat = parseFloat(parts[2]);
                         const lon = parseFloat(parts[3]);
                         
                         if (lat >= 40.75 && lat <= 40.85 && lon >= 29.00 && lon <= 29.20) {
-                            if (!globalEarthquakeDates.has(iso_date) && globalEarthquakeDates.size > 0) {
+                            if (!globalEarthquakeDates.has(date_str) && globalEarthquakeDates.size > 0) {
                                 foundNew = true;
                                 break; // Bir tane yeni bulmak tetikleme için yeterli
                             }
@@ -395,7 +394,8 @@
             
             currentEqCount = earthquakes.length;
             globalEarthquakeDates.clear();
-            earthquakes.forEach(eq => globalEarthquakeDates.add(eq.date));
+            // Zaman dilimi hatalarını önlemek için '2026-08-20 03:28:11' gibi düz string olarak saklıyoruz
+            earthquakes.forEach(eq => globalEarthquakeDates.add(eq.date.replace('T', ' ').substring(0, 19)));
 
             document.getElementById('loading').style.display = 'none';
             
