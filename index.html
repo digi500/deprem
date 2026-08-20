@@ -264,12 +264,25 @@
         let isEngineRunning = false;
 
         function startCountdown() {
-            // Görsel sayacı 10 saniyelik "Tarayıcı Polling" durumuna çevirelim
+            // 10 saniyelik dinamik geri sayım sayacı
             setInterval(() => {
+                const now = new Date();
+                const seconds = now.getSeconds();
+                
+                // 10 saniyelik periyotlar (0, 10, 20, 30, 40, 50)
+                const next10 = Math.ceil((seconds + 1) / 10) * 10;
+                let diff = next10 - seconds;
+                if (diff === 10) diff = 0;
+                
                 const timerSpan = document.getElementById('countdown-timer');
                 if (timerSpan && !isEngineRunning) {
-                    timerSpan.innerText = "Canlı İzleme (10 sn)...";
-                    timerSpan.style.color = "#4facfe";
+                    if (diff === 0) {
+                        timerSpan.innerText = "Kandilli kontrol ediliyor...";
+                        timerSpan.style.color = "#4facfe";
+                    } else {
+                        timerSpan.innerText = `Sıradaki Kandilli kontrolüne: ${diff} sn`;
+                        timerSpan.style.color = "#aaa";
+                    }
                 }
             }, 1000);
         }
