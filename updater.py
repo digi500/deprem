@@ -123,48 +123,54 @@ def update_system():
         unmatched_preds_res = supabase.table('predictions').select('*').is_('matched_earthquake_id', 'null').order('created_at').execute()
         unmatched_preds = unmatched_preds_res.data
         
-        for i, real_eq in enumerate(new_eqs_this_run):
-            if i < len(unmatched_preds):
-                pred = unmatched_preds[i]
-                
-                dist_error = haversine(pred['pred_lat'], pred['pred_lon'], real_eq['lat'], real_eq['lon'])
-                mag_error = real_eq['mag'] - pred['pred_mag']
-                error_lat = real_eq['lat'] - pred['pred_lat']
-                error_lon = real_eq['lon'] - pred['pred_lon']
-                error_depth = real_eq['depth'] - pred['pred_depth']
-                
-                # Zaman farkı hesabı
-                try:
-                    def to_naive(dt_str):
-                        dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
-                        if dt.tzinfo is not None:
-                            dt = dt.replace(tzinfo=None)
-                        return dt
-                        
-                    real_time = to_naive(real_eq['date'])
-                    if pred.get('pred_date'):
-                        pred_time = to_naive(pred['pred_date'])
-                        error_time_mins = (real_time - pred_time).total_seconds() / 60.0
-                    else:
-                        error_time_mins = 0
-                except Exception as e:
-                    print("Time error:", e)
+        # SADECE İLK DEPREMİ EŞLEŞTİR (Deprem fırtınası mantığı)
+        if len(unmatched_preds) > 0 and len(new_eqs_this_run) > 0:
+            pred = unmatched_preds[0]
+            real_eq = new_eqs_this_run[0]
+            
+            dist_error = haversine(pred['pred_lat'], pred['pred_lon'], real_eq['lat'], real_eq['lon'])
+            mag_error = real_eq['mag'] - pred['pred_mag']
+            error_lat = real_eq['lat'] - pred['pred_lat']
+            error_lon = real_eq['lon'] - pred['pred_lon']
+            error_depth = real_eq['depth'] - pred['pred_depth']
+            
+            # Zaman farkı hesabı
+            try:
+                def to_naive(dt_str):
+                    dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+                    if dt.tzinfo is not None:
+                        dt = dt.replace(tzinfo=None)
+                    return dt
+                    
+                real_time = to_naive(real_eq['date'])
+                if pred.get('pred_date'):
+                    pred_time = to_naive(pred['pred_date'])
+                    error_time_mins = (real_time - pred_time).total_seconds() / 60.0
+                else:
                     error_time_mins = 0
-                
-                # Tahmini güncelle
-                supabase.table('predictions').update({
-                    'matched_earthquake_id': real_eq['id'],
-                    'error_distance_km': dist_error,
-                    'error_mag': mag_error,
-                    'error_lat': error_lat,
-                    'error_lon': error_lon,
-                    'error_depth': error_depth,
-                    'error_time_mins': error_time_mins
-                }).eq('id', pred['id']).execute()
-                
-                print(f"Tahmin değerlendirildi! ({real_eq['date']} -> Tahmin {pred['target_order']}) Sapma: {dist_error:.2f} km")
-            else:
-                print(f"Uyarı: {real_eq['date']} tarihli deprem için hazırda bekleyen bir tahmin yoktu, boş geçiliyor.")
+            except Exception as e:
+                print("Time error:", e)
+                error_time_mins = 0
+            
+            # Tahmini güncelle
+            supabase.table('predictions').update({
+                'matched_earthquake_id': real_eq['id'],
+                'error_distance_km': dist_error,
+                'error_mag': mag_error,
+                'error_lat': error_lat,
+                'error_lon': error_lon,
+                'error_depth': error_depth,
+                'error_time_mins': error_time_mins
+            }).eq('id', pred['id']).execute()
+            
+            print(f"Tahmin değerlendirildi! ({real_eq['date']} -> Tahmin {pred['target_order']}) Sapma: {dist_error:.2f} km")
+            
+            # Eğer tek seferde 1'den fazla deprem geldiyse, açıkta kalan diğer tahminleri SİL (İptal et)
+            # Böylece hemen ardından yeni güncel duruma (son depreme) göre taze 3 tahmin üretilebilir.
+            if len(new_eqs_this_run) > 1 and len(unmatched_preds) > 1:
+                for stale_pred in unmatched_preds[1:]:
+                    supabase.table('predictions').delete().eq('id', stale_pred['id']).execute()
+                print(f"Deprem fırtınası algılandı! {len(new_eqs_this_run)-1} adet fazladan deprem eşleştirilmedi ve {len(unmatched_preds)-1} adet eski tahmin silindi.")
 
     # 4. Açıkta (eşleşmemiş) tahmin var mı kontrol et, yoksa yeni tahmin üret
     pending_preds_res = supabase.table('predictions').select('*').is_('matched_earthquake_id', 'null').execute()
