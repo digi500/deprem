@@ -1,0 +1,38 @@
+[
+  {
+    "version": "V1",
+    "name": "Rastgele \u00dcretim",
+    "score": 25.4,
+    "date": "2026-08-16"
+  },
+  {
+    "version": "V2",
+    "name": "Lineer Regresyon",
+    "score": 48.2,
+    "date": "2026-08-18"
+  },
+  {
+    "version": "V3",
+    "name": "Merkezcil \u00c7ekim (Clustering)",
+    "score": 34.7,
+    "date": "2026-08-19"
+  },
+  {
+    "version": "V3a",
+    "name": "V3 + Zaman B\u00fck\u00fcc\u00fc (Seismic Lock)",
+    "score": 34.0,
+    "date": "2026-08-20"
+  },
+  {
+    "version": "V4",
+    "name": "DBSCAN (Yo\u011funluk Odakl\u0131)",
+    "score": 33.2,
+    "date": "2026-08-20"
+  },
+  {
+    "version": "V5",
+    "name": "Markov Zincirleri (Grid Ge\u00e7i\u015f)",
+    "score": 34.6,
+    "date": "2026-08-20"
+  }
+]
