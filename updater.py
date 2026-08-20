@@ -305,13 +305,18 @@ def update_system():
         # Eğer küçükse (enerji birikiyor), bir sonraki çok çabuk olur (5-10 dk).
         mag_factor = (last_eq['mag'] / 1.5) ** 2 
         
+        target_node = (N % 3) + 1 # 1, 2 veya 3
+        
         # Supabase'e ekle
         for p in range(points_to_predict):
-            current_node = 1 # Sadece 1 tahmin üretildiği için hep (1) olarak etiketlensin
+            current_node = target_node
+            
+            # Seçilen noktanın koordinatlarını pred_coords listesinden al (index 0,1,2)
+            selected_coord = pred_coords[current_node - 1]
             
             # Değerlere (büyüklüğe) dayalı dinamik gecikme!
-            # Her bir sonraki nokta için (p+1), mag_factor ile şekillenen bir zaman biç.
-            multiplier = p + 1
+            # Sadece tek bir tahmin üretildiği için gecikme çarpanı 1'dir.
+            multiplier = 1
             
             # Ana kural: Küçük depremden sonra hemen patlar, büyükten sonra yatar.
             dynamic_delay = avg_gap * mag_factor * multiplier
@@ -342,9 +347,9 @@ def update_system():
             
             new_pred = {
                 'target_order': current_node,
-                'pred_lat': pred_coords[p]['lat'],
-                'pred_lon': pred_coords[p]['lon'],
-                'pred_depth': pred_coords[p]['depth'],
+                'pred_lat': selected_coord['lat'],
+                'pred_lon': selected_coord['lon'],
+                'pred_depth': selected_coord['depth'],
                 'pred_mag': pred_mag, # Gerilim (Strain) analizi ile tahmin edilen büyüklük
                 'pred_date': pred_time.isoformat()
             }
