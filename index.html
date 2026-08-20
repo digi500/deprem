@@ -186,7 +186,6 @@
     </style>
 </head>
 <body>
-    <div id="loading">Sistem Verileri Yükleniyor...</div>
     <div id="plot-container"></div>
     
     <button id="show-panel-btn" onclick="showPanel()">Sismik Aktiviteyi Göster</button>
@@ -349,6 +348,13 @@
 
         async function init() {
             startCountdown();
+            // Veriler gelene kadar arayüzün (Deniz yüzeyi ve tablo kalıbı) hemen görünmesi için boş çizim yap
+            renderPlot([], []);
+            renderTable([], []);
+            
+            // Paneli göster
+            document.getElementById('data-list').style.display = 'flex';
+            
             await loadData(false);
             
             // Her 10 saniyede bir Kandilli'yi kontrol et
@@ -364,7 +370,6 @@
 
             if (eqError) {
                 console.error("Deprem verisi çekilemedi:", eqError);
-                document.getElementById('loading').innerText = "Veri çekme hatası! Veritabanı izinlerini kontrol edin.";
                 return;
             }
 
@@ -396,8 +401,6 @@
             globalEarthquakeDates.clear();
             // Zaman dilimi hatalarını önlemek için '2026-08-20 03:28:11' gibi düz string olarak saklıyoruz
             earthquakes.forEach(eq => globalEarthquakeDates.add(eq.date.replace('T', ' ').substring(0, 19)));
-
-            document.getElementById('loading').style.display = 'none';
             
             if (!isPanelHidden) {
                 document.getElementById('data-list').style.display = 'flex';
