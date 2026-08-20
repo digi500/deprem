@@ -558,6 +558,19 @@
                 opacity: 0.2, color: 'rgba(0, 150, 255, 0.5)', type: 'mesh3d', name: 'Deniz Yüzeyi', hoverinfo: 'name'
             };
 
+            let savedCamera = null;
+            const graphDiv = document.getElementById('plot-container');
+            
+            // Mevcut kamerayı (React update) veya hafızadaki kamerayı (sayfa yenileme) al
+            if (graphDiv && graphDiv.layout && graphDiv.layout.scene && graphDiv.layout.scene.camera) {
+                savedCamera = graphDiv.layout.scene.camera;
+            } else {
+                const storedCamera = localStorage.getItem('plotCamera');
+                if (storedCamera) {
+                    try { savedCamera = JSON.parse(storedCamera); } catch(e){}
+                }
+            }
+
             const layout = {
                 margin: { l: 0, r: 0, b: 0, t: 0 },
                 paper_bgcolor: '#050510',
@@ -566,13 +579,25 @@
                     xaxis: { title: 'Boylam (Longitude)', color: '#aaaaaa', gridcolor: '#222233', zerolinecolor: '#444455', showbackground: false },
                     yaxis: { title: 'Enlem (Latitude)', color: '#aaaaaa', gridcolor: '#222233', zerolinecolor: '#444455', showbackground: false },
                     zaxis: { title: 'Derinlik (km)', color: '#aaaaaa', gridcolor: '#222233', zerolinecolor: '#444455', range: [-30, 5], showbackground: false },
-                    camera: { eye: { x: 1.5, y: -1.5, z: 0.5 } },
+                    camera: savedCamera || { eye: { x: 1.5, y: -1.5, z: 0.5 } },
                     aspectmode: 'cube'
                 }
             };
 
             const config = { responsive: true, displayModeBar: true, displaylogo: false };
-            Plotly.newPlot('plot-container', [surface, traceRealMesh, tracePredMesh, trace, tracePredPoints], layout, config);
+            
+            // newPlot yerine react kullanıyoruz (Ekranı titretemeden/sıfırlamadan günceller)
+            Plotly.react('plot-container', [surface, traceRealMesh, tracePredMesh, trace, tracePredPoints], layout, config).then(function() {
+                // Kamera açısı her değiştiğinde (mouse ile çevrilince) localStorage'a kaydet
+                if (!graphDiv.hasRelayoutListener) {
+                    graphDiv.on('plotly_relayout', function(eventData) {
+                        if (eventData['scene.camera']) {
+                            localStorage.setItem('plotCamera', JSON.stringify(eventData['scene.camera']));
+                        }
+                    });
+                    graphDiv.hasRelayoutListener = true;
+                }
+            });
         }
 
         function formatTimeDiff(ms) {
