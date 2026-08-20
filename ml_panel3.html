@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML3 Paneli - Algoritma İzahnamesi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(22, 27, 34, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            color: #ffa500;
+            font-size: 28px;
+            margin-top: 0;
+            border-bottom: 2px solid rgba(255, 165, 0, 0.3);
+            padding-bottom: 15px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .card {
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 4px solid #58a6ff;
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            border-radius: 0 8px 8px 0;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .card h2 {
+            margin: 0 0 10px 0;
+            color: #58a6ff;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card p {
+            margin: 0;
+            line-height: 1.7;
+            color: #8b949e;
+            font-size: 15px;
+        }
+
+        .card strong {
+            color: #c9d1d9;
+        }
+
+        /* Specific Colors for specific metrics */
+        .card.time { border-left-color: #ff7b72; }
+        .card.time h2 { color: #ff7b72; }
+
+        .card.mag { border-left-color: #d2a8ff; }
+        .card.mag h2 { color: #d2a8ff; }
+
+        .card.loc { border-left-color: #7ee787; }
+        .card.loc h2 { color: #7ee787; }
+
+        .card.depth { border-left-color: #3fb950; }
+        .card.depth h2 { color: #3fb950; }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 5px;
+            margin-top: 10px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Tahmin Motoru Mantığı (V3a)</h1>
+        
+        <div class="card time">
+            <h2>⏱️ Zaman (Tarih ve Saat)</h2>
+            <p>
+                <strong>Nasıl Tahmin Ediliyor?</strong> Zaman hesabı, son 10 deprem arasındaki ortalama geçen süre (Zaman Boşluğu - Gap) ile son depremin büyüklüğü (Enerji Katsayısı) çarpılarak hesaplanır.
+                <br><br>
+                Eğer son olan deprem büyükse, fayın enerjisi büyük ölçüde boşalmış kabul edilir ve bir sonraki deprem için tahmin süresi <strong>uzatılır (geciktirilir)</strong>. Ancak son deprem çok küçükse, enerjinin birikmeye devam ettiği varsayılır ve bir sonraki sarsıntının <strong>çok daha kısa sürede (örneğin 5-10 dk içinde)</strong> gerçekleşeceği tahmin edilir. Sistem çok kısa süreli artçı fırtınalarını yakalamak için minimum 5 dakika gecikme kuralı uygular.
+            </p>
+        </div>
+
+        <div class="card mag">
+            <h2>📏 Büyüklük (Magnitude)</h2>
+            <p>
+                <strong>Nasıl Tahmin Ediliyor?</strong> Kümülatif sismik moment (enerji birikimi) izlenir. Tüm yakın geçmişteki depremlerin ortalama enerjisi ile sadece son 3 depremin enerjisi kıyaslanır.
+                <br><br>
+                Eğer son 3 depremin enerjisi genel ortalamanın %50'sinden daha az ise (Fay aşırı sessizleştiyse), fayda tehlikeli bir gerilim (Strain) biriktiği anlaşılır ve motor bir sonraki depremin büyüklüğünün <strong>ortalamadan 0.5 daha büyük</strong> olacağını tahmin eder. Eğer sadece ufak bir yavaşlama varsa <strong>+0.2 ekler</strong>. Eğer son deprem halihazırda ortalamadan büyükse, enerjinin boşaldığı anlaşılır ve motor bir sonraki tahmini <strong>artçı olarak (-0.3) düşürür</strong>.
+            </p>
+        </div>
+
+        <div class="card loc">
+            <h2>📍 Enlem ve Boylam (Lokasyon)</h2>
+            <p>
+                <strong>Nasıl Tahmin Ediliyor?</strong> Lokasyon tahmini için "Çift Yönlü Geometrik Analiz" kullanılır. 
+                <br><br>
+                1. <strong>Regresyon (Strike):</strong> Son depremlerin haritadaki dizilimi matematiksel olarak hesaplanır ve fayın bir sonraki kırılma yönü (Doğrultu) vektörel olarak uzatılır.<br>
+                2. <strong>Merkezcil Çekim (Kovan):</strong> Son 5 depremin ağırlık merkezi (Centroid) bulunur.<br><br>
+                Motor, bir sonraki tahmin noktasını belirlerken %70 oranında fayın gidiş yönüne doğru ilerler, ancak aşırı sapmayı (Overshoot) engellemek için %30 oranında kovan merkezine geri çeker. Bu hibrit yaklaşım, sürünün dağılmasını engeller.
+            </p>
+        </div>
+
+        <div class="card depth">
+            <h2>⬇️ Derinlik (Depth)</h2>
+            <p>
+                <strong>Nasıl Tahmin Ediliyor?</strong> Depremlerin dikey düzlemdeki hareket eğilimi (Dip - Eğim) hesaplanır. 
+                <br><br>
+                Kayıtlı en eski deprem ile en yeni depremin derinlikleri arasındaki fark alınır ve adım sayısına bölünerek "Ortalama Derinlik Eğilimi" bulunur. Eğer depremler yüzeye doğru tırmanıyorsa bir sonraki tahmin daha sığ bir noktaya, eğer derine doğru iniyorsa daha derin bir noktaya yansıtılır.
+            </p>
+        </div>
+
+    </div>
+
+</body>
+</html>
