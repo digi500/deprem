@@ -312,34 +312,6 @@
                         timerSpan.style.color = "#aaa";
                     }
                 }
-
-                // Kontrol Tablosundaki Canlı Tahmin Geri Sayımı
-                const kontrolCell = document.getElementById('live-kontrol-time');
-                if (kontrolCell) {
-                    const targetDateStr = kontrolCell.getAttribute('data-target');
-                    if (targetDateStr && targetDateStr !== 'undefined' && targetDateStr !== 'null') {
-                        const targetDate = new Date(targetDateStr);
-                        const diffMs = targetDate - now;
-                        const isPast = diffMs < 0;
-                        const absMs = Math.abs(diffMs);
-                        
-                        const h = Math.floor(absMs / (1000 * 60 * 60));
-                        const m = Math.floor((absMs % (1000 * 60 * 60)) / (1000 * 60));
-                        const s = Math.floor((absMs % (1000 * 60)) / 1000);
-                        
-                        const formatted = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-                        
-                        if (isPast) {
-                            kontrolCell.innerText = "- " + formatted;
-                            kontrolCell.style.color = "#ff3232"; // Kırmızı
-                            kontrolCell.style.fontWeight = "bold";
-                        } else {
-                            kontrolCell.innerText = formatted;
-                            kontrolCell.style.color = "#00ff00"; // Yeşil (Gelecek)
-                            kontrolCell.style.fontWeight = "bold";
-                        }
-                    }
-                }
             }, 1000);
         }
         async function pollKandilli() {
@@ -678,6 +650,23 @@
             let hours = (mins / 60).toFixed(1);
             return sign + hours + ' sa';
         }
+        
+        function formatKontrolDuration(ms) {
+            let isPast = ms < 0;
+            let absMs = Math.abs(ms);
+            let h = Math.floor(absMs / (1000 * 60 * 60));
+            let m = Math.floor((absMs % (1000 * 60 * 60)) / (1000 * 60));
+            let s = Math.floor((absMs % (1000 * 60)) / 1000);
+            
+            let pad = (n) => String(n).padStart(2, '0');
+            let formatted = pad(h) + ":" + pad(m) + ":" + pad(s);
+            
+            if (isPast) {
+                return `<span style="color: #ff3232; font-weight: bold;">- ${formatted}</span>`;
+            } else {
+                return `<span>${formatted}</span>`;
+            }
+        }
 
         function renderTable(data, allPredictions) {
             const tbody = document.getElementById('data-table-body');
@@ -697,6 +686,12 @@
                     pLabel = `${formatToLocalTime(p.pred_date)} (${p.target_order})`;
                 }
                 
+                let kontrolZamanHtml = "-";
+                if (p.pred_date && p.created_at) {
+                    let diffMs = new Date(p.pred_date).getTime() - new Date(p.created_at).getTime();
+                    kontrolZamanHtml = formatKontrolDuration(diffMs);
+                }
+
                 rowsHtml += `<tr>
                     <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
                     <td style="border-bottom: none; padding: 0;"></td>
@@ -708,7 +703,7 @@
                     <td style="border-bottom: none; padding: 0;"></td>
                     <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
                     <td style="border-bottom: none; padding: 0;"></td>
-                    <td id="live-kontrol-time" data-target="${p.pred_date}">-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+                    <td>${kontrolZamanHtml}</td><td>-</td><td>-</td><td>-</td><td>-</td>
                 </tr>`;
             }
             
@@ -779,7 +774,7 @@
 
                     <td style="border-bottom: none; padding: 0;"></td>
                     
-                    <td>-</td>
+                    <td>${kontrolZamanHtml}</td>
                     <td>-</td>
                     <td>-</td>
                     <td>-</td>
