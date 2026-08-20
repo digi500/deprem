@@ -276,7 +276,7 @@ def update_system():
             {'lat': p3_lat, 'lon': p3_lon, 'depth': p3_depth}
         ]
         
-        # Zaman hesaplaması (En yeni depremler üzerinden ortalama boşluk)
+        # Zaman hesaplaması (Sismik Fizik Mantığı: Değerlere bakarak karar ver!)
         sample = recent_eqs[-10:]
         total_gap = timedelta(0)
         
@@ -291,37 +291,43 @@ def update_system():
             total_gap += gap
             
         avg_gap = total_gap / len(gaps) if gaps else timedelta(minutes=60)
-        max_gap = max(gaps) if gaps else timedelta(minutes=60)
         
         base_time = parse_d(last_eq['date'])
+        import datetime as dt_module
+        
+        # Son depremin büyüklüğüne göre enerji katsayısı
+        # Eğer büyük bir depremse (enerji boşaldı), bir sonraki çok geç olur.
+        # Eğer küçükse (enerji birikiyor), bir sonraki çok çabuk olur (5-10 dk).
+        mag_factor = (last_eq['mag'] / 1.5) ** 2 
         
         # Supabase'e ekle
         for p in range(points_to_predict):
             current_node = ((N + p) % 3) + 1
             
-            # Sırasıyla zamanı ileri at
+            # Değerlere (büyüklüğe) dayalı dinamik gecikme!
+            # Her bir sonraki nokta için (p+1), mag_factor ile şekillenen bir zaman biç.
             multiplier = p + 1
-            raw_pred_time = base_time + (avg_gap * multiplier)
             
-            # Zamanın her zaman gelecekte olduğundan emin ol
-            import datetime as dt_module
-            current_time = dt_module.datetime.now(raw_pred_time.tzinfo)
-            if raw_pred_time < current_time:
-                # Fay Kilitlenmesi (Seismic Lock) Mantığı:
-                # Beklenen süre geçtiyse stres birikir. 
-                # Yeni zaman = Şu an + (Gecikme süresinin %50'si) + (Tarihsel max_gap'in %20'si)
-                overdue_time = current_time - raw_pred_time
-                delay_factor = overdue_time * 0.5
-                dynamic_offset = delay_factor + (max_gap * 0.2) * multiplier
+            # Ana kural: Küçük depremden sonra hemen patlar, büyükten sonra yatar.
+            dynamic_delay = avg_gap * mag_factor * multiplier
+            
+            # Çok kısa süreyi (artçıları) desteklemek için, eğer enerji çok küçükse 5 dakikaya kadar inebilir.
+            if dynamic_delay < dt_module.timedelta(minutes=5 * multiplier):
+                dynamic_delay = dt_module.timedelta(minutes=5 * multiplier)
                 
-                # Eğer offset çok küçükse minimum 5 dk güvenlik payı ekle
-                if dynamic_offset < dt_module.timedelta(minutes=5):
-                    dynamic_offset = dt_module.timedelta(minutes=5 * multiplier)
-                    
-                pred_time = current_time + dynamic_offset
-            else:
-                pred_time = raw_pred_time
+            pred_time = base_time + dynamic_delay
+            
+            # Eğer hesaplanan zaman şu andan eskiyse (sistem geride kaldıysa),
+            # rastgele geleceğe fırlatma! Sadece şu andan itibaren o ufak gecikmeyi (dynamic_delay) ekle.
+            current_time = dt_module.datetime.now(pred_time.tzinfo if pred_time.tzinfo else dt_module.timezone.utc)
+            if pred_time < current_time:
+                # Sadece değerlerin (magnitude'un) belirlediği saf gecikmeyi şu ana ekle. Eski "fay kilitlenmesi" saçmalığını iptal ettik.
+                pred_time = current_time + (dynamic_delay / 2) # Geride kalındığı için daha hızlı olması beklenir
 
+            # Tahmin zamanını Supabase'e gönderirken Türkiye Saati (UTC+3) olduğunu belirt
+            timezone = dt_module.timezone(dt_module.timedelta(hours=3))
+            if pred_time.tzinfo is None:
+                pred_time = pred_time.replace(tzinfo=timezone)
             
             new_pred = {
                 'target_order': current_node,
