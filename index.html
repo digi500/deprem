@@ -188,7 +188,7 @@
 <body>
     <div id="plot-container"></div>
     
-    <button id="show-panel-btn" onclick="showPanel()">Sismik Aktiviteyi Göster</button>
+    <button id="show-panel-btn">Sismik Aktiviteyi Göster</button>
 
     <!-- Tahmin Motoru Bilgi Modalı -->
     <div id="info-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 3000; justify-content: center; align-items: center;">
@@ -825,6 +825,12 @@
             if (top) dragElement.style.top = top;
             if (width) dragElement.style.width = width;
             if (height) dragElement.style.height = height;
+            
+            const btnLeft = localStorage.getItem('btn_left');
+            const btnTop = localStorage.getItem('btn_top');
+            const showPanelBtn = document.getElementById("show-panel-btn");
+            if (btnLeft) { showPanelBtn.style.left = btnLeft; showPanelBtn.style.right = 'auto'; }
+            if (btnTop) { showPanelBtn.style.top = btnTop; }
         }
         
         loadPanelState(); // Sayfa açıldığında yükle
@@ -909,6 +915,55 @@
             document.onmousemove = null;
             dragHeader.style.cursor = 'grab';
             savePanelState();
+        }
+
+        // --- GÖSTER BUTONU DRAG & DROP EKLENTİSİ ---
+        const showPanelBtn = document.getElementById("show-panel-btn");
+        let btnPos1 = 0, btnPos2 = 0, btnPos3 = 0, btnPos4 = 0;
+        let isBtnDragged = false;
+        
+        showPanelBtn.onmousedown = function(e) {
+            e.preventDefault();
+            btnPos3 = e.clientX;
+            btnPos4 = e.clientY;
+            isBtnDragged = false;
+            document.onmouseup = closeBtnDrag;
+            document.onmousemove = btnDrag;
+            showPanelBtn.style.cursor = 'grabbing';
+            document.getElementById('plot-container').style.pointerEvents = 'none';
+        };
+
+        function btnDrag(e) {
+            e.preventDefault();
+            btnPos1 = btnPos3 - e.clientX;
+            btnPos2 = btnPos4 - e.clientY;
+            btnPos3 = e.clientX;
+            btnPos4 = e.clientY;
+            
+            // Eğer fare 3 pikselden fazla hareket ederse, bu bir "sürükleme" (drag) işlemidir, tıklama (click) değildir.
+            if (Math.abs(btnPos1) > 3 || Math.abs(btnPos2) > 3) {
+                isBtnDragged = true;
+            }
+            
+            showPanelBtn.style.top = (showPanelBtn.offsetTop - btnPos2) + "px";
+            showPanelBtn.style.left = (showPanelBtn.offsetLeft - btnPos1) + "px";
+            showPanelBtn.style.right = 'auto';
+        }
+
+        function closeBtnDrag(e) {
+            document.onmouseup = null;
+            document.onmousemove = null;
+            showPanelBtn.style.cursor = 'pointer';
+            document.getElementById('plot-container').style.pointerEvents = 'auto';
+            
+            if (!isBtnDragged) {
+                // Sürüklenmediyse, butona basılmıştır
+                showPanel();
+            } else {
+                // Sürüklendiyse, pozisyonu hafızaya kaydet
+                localStorage.setItem('btn_left', showPanelBtn.style.left);
+                localStorage.setItem('btn_top', showPanelBtn.style.top);
+            }
         }
 
         // --- OTOMATİK SAYFA YENİLEME (Vercel Deploy Takibi) ---
