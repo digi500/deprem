@@ -174,7 +174,7 @@
             max-width: 140px;
         }
         
-        #ml-panel-btn, #ml-panel-btn-2 {
+        #ml-panel-btn, #ml-panel-btn-2, #ml-panel-btn-3 {
             position: absolute;
             right: 60px;
             background: rgba(255, 0, 255, 0.15);
@@ -204,6 +204,15 @@
         #ml-panel-btn-2:hover {
             background: rgba(0, 255, 255, 0.4);
         }
+        #ml-panel-btn-3 {
+            top: 95px;
+            background: rgba(255, 165, 0, 0.15);
+            border: 1px solid #ffa500;
+            color: #ffa500;
+        }
+        #ml-panel-btn-3:hover {
+            background: rgba(255, 165, 0, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -212,6 +221,7 @@
     <button id="show-panel-btn">Sismik Aktiviteyi Göster</button>
     <button id="ml-panel-btn" onclick="window.open('ml_panel.html?v=' + new Date().getTime(), '_blank')">ML1</button>
     <button id="ml-panel-btn-2" onclick="window.open('ml_panel2.html?v=' + new Date().getTime(), '_blank')">ML2</button>
+    <button id="ml-panel-btn-3" onclick="window.open('ml_panel3.html?v=' + new Date().getTime(), '_blank')">ML3</button>
 
     <!-- Tahmin Motoru Bilgi Modalı -->
     <div id="info-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 3000; justify-content: center; align-items: center;">
