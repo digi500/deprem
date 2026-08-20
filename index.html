@@ -347,10 +347,42 @@
         }
 
         // Güncelleme butonuna basıldığında DB'yi günceller (Sadece okur, yazmaz!)
+        // Güncelleme butonuna basıldığında gizli API (Vercel) üzerinden Github Actions motorunu anında tetikler
         async function updateEarthquakesManually() {
             const btn = document.getElementById('update-btn');
-            if(btn) btn.innerText = "Kontrol ediliyor...";
-            await loadData("manual");
+            if(btn) {
+                btn.innerText = "Motor Tetikleniyor...";
+                btn.disabled = true;
+            }
+            
+            try {
+                // Vercel Serverless Function'ı çağır
+                const res = await fetch('/api/trigger', { method: 'POST' });
+                
+                if (res.ok) {
+                    if(btn) btn.innerText = "Motor Çalışıyor (Lütfen Bekleyin)...";
+                    
+                    // Motorun veriyi çekip hesaplamaları bitirmesi için ortalama 10 saniye bekle
+                    setTimeout(async () => {
+                        await loadData("manual"); // Veritabanını güncelle ve tabloyu yenile
+                        if(btn) btn.disabled = false;
+                    }, 10000);
+                    
+                } else {
+                    const errData = await res.json();
+                    alert("Tetikleme Hatası: " + errData.error);
+                    if(btn) {
+                        btn.innerText = "Manuel Kontrol Et";
+                        btn.disabled = false;
+                    }
+                }
+            } catch (err) {
+                alert("API Hatası: Köprüye ulaşılamadı.");
+                if(btn) {
+                    btn.innerText = "Manuel Kontrol Et";
+                    btn.disabled = false;
+                }
+            }
         }
 
         function renderPlot(data, allPredictions) {
