@@ -197,6 +197,73 @@ def run_v5(all_past_eqs):
     
     return pred_lat, pred_lon, predict_magnitude(all_past_eqs[-10:]), predict_time(all_past_eqs[-10:])
 
+def predict_v6_language_model(all_past_eqs):
+    # Sismik Dil Modeli (Seismic Language Model - N-Gram)
+    # Tokenization:
+    def get_token(eq, prev_eq=None):
+        lat_t = int(round(eq['latitude'] / 0.1))
+        lon_t = int(round(eq['longitude'] / 0.1))
+        mag_t = int(round(eq['magnitude'] / 0.2))
+        
+        if prev_eq:
+            dt1 = to_timestamp(eq['date'])
+            dt2 = to_timestamp(prev_eq['date'])
+            diff_mins = (dt1 - dt2) / 60.0
+            if diff_mins < 60: t_t = 0
+            elif diff_mins < 60*6: t_t = 1
+            elif diff_mins < 60*24: t_t = 2
+            else: t_t = 3
+        else:
+            t_t = 0
+            
+        return f"L{lat_t}_{lon_t}_M{mag_t}_T{t_t}"
+        
+    tokens = []
+    for i in range(len(all_past_eqs)):
+        prev = all_past_eqs[i-1] if i > 0 else None
+        tok = get_token(all_past_eqs[i], prev)
+        tokens.append(tok)
+        
+    # Build Bigram Transition Matrix
+    transitions = {}
+    for i in range(1, len(tokens)):
+        prev_tok = tokens[i-1]
+        curr_tok = tokens[i]
+        if prev_tok not in transitions:
+            transitions[prev_tok] = {}
+        transitions[prev_tok][curr_tok] = transitions[prev_tok].get(curr_tok, 0) + 1
+        
+    last_tok = tokens[-1]
+    
+    if last_tok in transitions and len(transitions[last_tok]) > 0:
+        best_next_tok = max(transitions[last_tok], key=transitions[last_tok].get)
+    else:
+        # Fallback to most frequent token overall
+        freqs = {}
+        for t in tokens: freqs[t] = freqs.get(t, 0) + 1
+        best_next_tok = max(freqs, key=freqs.get)
+        
+    # Decode token back to values
+    parts = best_next_tok.split('_')
+    pred_lat = int(parts[0][1:]) * 0.1
+    pred_lon = int(parts[1]) * 0.1
+    pred_mag = int(parts[2][1:]) * 0.2
+    
+    t_t = int(parts[3][1:])
+    if t_t == 0: delay = 30
+    elif t_t == 1: delay = 3*60
+    elif t_t == 2: delay = 12*60
+    else: delay = 48*60
+    
+    last_time = to_timestamp(all_past_eqs[-1]['date'])
+    pred_time = last_time + (delay * 60)
+    
+    # Smooth locations to avoid snapping exactly to grid centers
+    pred_lat = (pred_lat * 0.7) + (all_past_eqs[-1]['latitude'] * 0.3)
+    pred_lon = (pred_lon * 0.7) + (all_past_eqs[-1]['longitude'] * 0.3)
+    
+    return pred_lat, pred_lon, pred_mag, pred_time
+
 def main():
     print("Yükleniyor...")
     with open('c:\\deprem\\scratch\\afad_dataset.json', 'r', encoding='utf-8') as f:
@@ -223,6 +290,7 @@ def main():
     results_v3a = []
     results_v4 = []
     results_v5 = []
+    results_v6 = []
     
     # We test on the last 500 earthquakes to save time, using history up to that point
     test_count = min(500, len(valid_data) - 100)
@@ -257,6 +325,12 @@ def main():
         s5 = calculate_score(d5, abs(target['magnitude'] - p5_mag), abs(actual_time - p5_time) / 60.0)
         results_v5.append(s5)
         
+        # V6
+        p6_lat, p6_lon, p6_mag, p6_time = predict_v6_language_model(valid_data[:i])
+        d6 = haversine(p6_lat, p6_lon, target['latitude'], target['longitude'])
+        s6 = calculate_score(d6, abs(target['magnitude'] - p6_mag), abs(actual_time - p6_time) / 60.0)
+        results_v6.append(s6)
+        
         if i % 100 == 0:
             print(f"İşleniyor: {i}/{len(valid_data)}")
 
@@ -264,21 +338,24 @@ def main():
     score_v3a = sum(results_v3a) / len(results_v3a)
     score_v4 = sum(results_v4) / len(results_v4)
     score_v5 = sum(results_v5) / len(results_v5)
+    score_v6 = sum(results_v6) / len(results_v6)
     
-    print(f"V3 Ortalama Başarı: {score_v3:.2f}%")
-    print(f"V3a Ortalama Başarı: {score_v3a:.2f}%")
-    print(f"V4 Ortalama Başarı: {score_v4:.2f}%")
-    print(f"V5 Ortalama Başarı: {score_v5:.2f}%")
+    print(f"V3 Başarı Oranı: %{score_v3:.2f}")
+    print(f"V3a Başarı Oranı: %{score_v3a:.2f}")
+    print(f"V4 Başarı Oranı: %{score_v4:.2f}")
+    print(f"V5 Başarı Oranı: %{score_v5:.2f}")
+    print(f"V6 Başarı Oranı (Sismik Dil Modeli): %{score_v6:.2f}")
     
+    # Save to JSON
     history = [
         {"version": "V1", "name": "Rastgele Üretim", "score": 25.4, "date": "2026-08-16"},
         {"version": "V2", "name": "Lineer Regresyon", "score": 48.2, "date": "2026-08-18"},
-        {"version": "V3", "name": "Merkezcil Çekim (Clustering)", "score": round(score_v3, 1), "date": "2026-08-19"},
-        {"version": "V3a", "name": "V3 + Zaman Bükücü (Seismic Lock)", "score": round(score_v3a, 1), "date": "2026-08-20"},
-        {"version": "V4", "name": "DBSCAN (Yoğunluk Odaklı)", "score": round(score_v4, 1), "date": "2026-08-20"},
-        {"version": "V5", "name": "Markov Zincirleri (Grid Geçiş)", "score": round(score_v5, 1), "date": "2026-08-20"}
+        {"version": "V3", "name": "Merkezcil Çekim (Clustering)", "score": round(score_v3, 1), "date": datetime.now().strftime('%Y-%m-%d')},
+        {"version": "V3a", "name": "V3 + Zaman Bükücü (Seismic Lock)", "score": round(score_v3a, 1), "date": datetime.now().strftime('%Y-%m-%d')},
+        {"version": "V4", "name": "DBSCAN (Yoğunluk Odaklı)", "score": round(score_v4, 1), "date": datetime.now().strftime('%Y-%m-%d')},
+        {"version": "V5", "name": "Markov Zincirleri (Grid Geçiş)", "score": round(score_v5, 1), "date": datetime.now().strftime('%Y-%m-%d')},
+        {"version": "V6", "name": "Sismik Dil Modeli (NLP N-Gram)", "score": round(score_v6, 1), "date": datetime.now().strftime('%Y-%m-%d')}
     ]
-    
     with open('c:\\deprem\\scratch\\experiment_history.json', 'w', encoding='utf-8') as f:
         json.dump(history, f, indent=2)
 

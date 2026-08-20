@@ -15,7 +15,7 @@
     "version": "V3",
     "name": "Merkezcil \u00c7ekim (Clustering)",
     "score": 53.4,
-    "date": "2026-08-19"
+    "date": "2026-08-20"
   },
   {
     "version": "V3a",
@@ -33,6 +33,12 @@
     "version": "V5",
     "name": "Markov Zincirleri (Grid Ge\u00e7i\u015f)",
     "score": 53.1,
+    "date": "2026-08-20"
+  },
+  {
+    "version": "V6",
+    "name": "Sismik Dil Modeli (NLP N-Gram)",
+    "score": 52.9,
     "date": "2026-08-20"
   }
 ]
