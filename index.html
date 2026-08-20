@@ -651,7 +651,7 @@
             return sign + hours + ' sa';
         }
         
-        function formatKontrolDuration(ms) {
+        function formatKontrolDuration(ms, tooltip = "") {
             let isPast = ms < 0;
             let absMs = Math.abs(ms);
             
@@ -667,11 +667,12 @@
             if (s > 0 || parts.length === 0) parts.push(s + " sn");
             
             let formatted = parts.join(" ");
+            let titleAttr = tooltip ? `title="${tooltip}"` : "";
             
             if (isPast) {
-                return `<span style="color: #ff3232; font-weight: bold;">- ${formatted}</span>`;
+                return `<span ${titleAttr} style="color: #ff3232; font-weight: bold; cursor: help;">- ${formatted}</span>`;
             } else {
-                return `<span>${formatted}</span>`;
+                return `<span ${titleAttr} style="cursor: help;">${formatted}</span>`;
             }
         }
 
@@ -696,7 +697,8 @@
                 let kontrolZamanHtml = "-";
                 if (p.pred_date && p.created_at) {
                     let diffMs = new Date(p.pred_date).getTime() - new Date(p.created_at).getTime();
-                    kontrolZamanHtml = formatKontrolDuration(diffMs);
+                    let tooltip = `Tahmin Üretildi: ${formatToLocalTime(p.created_at)}\\nHedef Zaman: ${formatToLocalTime(p.pred_date)}`;
+                    kontrolZamanHtml = formatKontrolDuration(diffMs, tooltip);
                 }
 
                 rowsHtml += `<tr>
@@ -743,7 +745,8 @@
                     
                     if (matchedPred.pred_date && matchedPred.created_at) {
                         let diffMs = new Date(matchedPred.pred_date).getTime() - new Date(matchedPred.created_at).getTime();
-                        kontrolZamanHtml = formatKontrolDuration(diffMs);
+                        let tooltip = `Tahmin Üretildi: ${formatToLocalTime(matchedPred.created_at)}\\nHedef Zaman: ${formatToLocalTime(matchedPred.pred_date)}`;
+                        kontrolZamanHtml = formatKontrolDuration(diffMs, tooltip);
                     }
                     
                     pLat = matchedPred.pred_lat.toFixed(4);
