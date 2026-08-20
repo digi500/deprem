@@ -170,7 +170,7 @@ def update_system():
     pending_preds_res = supabase.table('predictions').select('*').is_('matched_earthquake_id', 'null').execute()
     
     if len(pending_preds_res.data) == 0:
-        print("Yeni tahmin üretiliyor (V2 Algoritması)...")
+        print("Yeni tahmin üretiliyor (V3 Algoritması)...")
         
         look_back = min(10, N)
         recent_eqs = db_eqs[-look_back:]
@@ -219,14 +219,21 @@ def update_system():
         step_km = max(avg_step_km, 1.0) 
         step_deg = step_km / 111.0
         
-        # 3. Gerilim (Strain) ve Magnitude Tahmini
+        # 3. Kümülatif Sismik Moment (Enerji Birikimi) V3 Algoritması
         avg_mag = sum(eq['mag'] for eq in recent_eqs) / n_pts
         last_mag = recent_eqs[-1]['mag']
         
-        if last_mag < avg_mag:
-            pred_mag = avg_mag + 0.3 # Enerji birikiyor
+        total_energy = sum(10 ** (1.5 * eq['mag']) for eq in recent_eqs)
+        avg_energy = total_energy / n_pts
+        recent_3_energy = sum(10 ** (1.5 * eq['mag']) for eq in recent_eqs[-3:]) / 3
+        
+        if recent_3_energy < avg_energy * 0.5:
+            # Fay aşırı sessizleşti, büyük bir boşalma (strain release) bekleniyor
+            pred_mag = avg_mag + 0.5
+        elif last_mag < avg_mag:
+            pred_mag = avg_mag + 0.2 # Hafif enerji birikiyor
         else:
-            pred_mag = max(avg_mag - 0.2, 1.0) # Enerji boşaldı (artçı)
+            pred_mag = max(avg_mag - 0.3, 1.0) # Enerji boşaldı (artçı)
             
         pred_mag = round(pred_mag, 1)
         
@@ -236,9 +243,18 @@ def update_system():
         remainder = N % 3
         points_to_predict = 3 if remainder == 0 else (3 - remainder)
         
-        # P1: İleri doğru ana kırılma noktası
-        p1_lat = last_eq['lat'] + (dir_lat * step_deg)
-        p1_lon = last_eq['lon'] + (dir_lon * step_deg)
+        # V3 Merkezcil Çekim (Centroid Clustering) - Son 5 depremin ağırlık merkezi
+        cluster_eqs = recent_eqs[-5:]
+        centroid_lat = sum(e['lat'] for e in cluster_eqs) / len(cluster_eqs)
+        centroid_lon = sum(e['lon'] for e in cluster_eqs) / len(cluster_eqs)
+        
+        # Regresyon Projeksiyonu
+        proj_lat = last_eq['lat'] + (dir_lat * step_deg)
+        proj_lon = last_eq['lon'] + (dir_lon * step_deg)
+        
+        # P1: İleri doğru ana kırılma noktası (%70 Regresyon + %30 Kovan Merkezi)
+        p1_lat = (proj_lat * 0.7) + (centroid_lat * 0.3)
+        p1_lon = (proj_lon * 0.7) + (centroid_lon * 0.3)
         p1_depth = last_eq['depth'] + dir_depth
         
         # P2 ve P3: Fay düzlemini genişleten yanal kırıklar
