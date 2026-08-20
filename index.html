@@ -230,6 +230,7 @@
                     (Veri Kaynağı: <a href="http://www.koeri.boun.edu.tr/scripts/lst4.asp" target="_blank" style="color: #4facfe; text-decoration: underline;">Kandilli Rasathanesi</a>)
                 </span>
                 <div style="display: flex; align-items: center; gap: 8px;">
+                    <span id="live-clock" style="color: #00ff00; font-family: monospace; font-size: 14px; font-weight: bold; margin-right: 15px; text-shadow: 0 0 5px rgba(0,255,0,0.5);"></span>
                     <button id="update-btn" onclick="updateEarthquakesManually()" style="background: rgba(79, 172, 254, 0.1); border: 1px solid #4facfe; color: #4facfe; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: all 0.2s;">Manuel Kontrol Et</button>
                     <span id="countdown-timer" style="font-size: 12px; color: #aaa; font-family: monospace;"></span>
                 </div>
@@ -1004,6 +1005,16 @@
             })
             .catch(err => {});
         }, 10000); // Her 10 saniyede bir kontrol et
+
+        // Canlı saat göstergesi
+        setInterval(() => {
+            const clockEl = document.getElementById('live-clock');
+            if (clockEl) {
+                const now = new Date();
+                const pad = (n) => String(n).padStart(2, '0');
+                clockEl.innerText = `Şu An: ${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            }
+        }, 1000);
 
         // Sistemi başlat
         init();
