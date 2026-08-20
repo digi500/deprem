@@ -317,12 +317,18 @@ def update_system():
                 
             pred_time = base_time + dynamic_delay
             
-            # Eğer hesaplanan zaman şu andan eskiyse (sistem geride kaldıysa),
-            # rastgele geleceğe fırlatma! Sadece şu andan itibaren o ufak gecikmeyi (dynamic_delay) ekle.
-            current_time = dt_module.datetime.now(pred_time.tzinfo if pred_time.tzinfo else dt_module.timezone.utc)
-            if pred_time < current_time:
+            # Zaman karşılaştırması için iki tarafın da tzinfo'sunu eşitle (AWARE vs NAIVE hatasını önle)
+            current_time = dt_module.datetime.now(dt_module.timezone.utc)
+            if pred_time.tzinfo is None:
+                # Veritabanındaki tarihler UTC+3'e göre naive kaydediliyor
+                pred_time = pred_time.replace(tzinfo=dt_module.timezone(dt_module.timedelta(hours=3)))
+            
+            # current_time'ı UTC+3'e çevirip karşılaştır
+            current_time_local = current_time.astimezone(dt_module.timezone(dt_module.timedelta(hours=3)))
+            
+            if pred_time < current_time_local:
                 # Sadece değerlerin (magnitude'un) belirlediği saf gecikmeyi şu ana ekle. Eski "fay kilitlenmesi" saçmalığını iptal ettik.
-                pred_time = current_time + (dynamic_delay / 2) # Geride kalındığı için daha hızlı olması beklenir
+                pred_time = current_time_local + (dynamic_delay / 2) # Geride kalındığı için daha hızlı olması beklenir
 
             # Tahmin zamanını Supabase'e gönderirken Türkiye Saati (UTC+3) olduğunu belirt
             timezone = dt_module.timezone(dt_module.timedelta(hours=3))
