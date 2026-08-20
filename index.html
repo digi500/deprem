@@ -262,6 +262,8 @@
         let currentEqCount = 0;
         let globalEarthquakeDates = new Set();
         let isEngineRunning = false;
+        let isPanelHidden = false;
+        let unseenEqCount = 0;
 
         function startCountdown() {
             // 10 saniyelik dinamik geri sayım sayacı
@@ -380,6 +382,7 @@
 
             if (currentEqCount > 0 && earthquakes.length > currentEqCount) {
                 const diff = earthquakes.length - currentEqCount;
+                unseenEqCount += diff;
                 alert(`MOTOR YENİ VERİ ÇEKTİ!\n${diff} yeni deprem oldu ve sisteme eklendi.`);
             } else if (isAutoUpdate === "manual" && !isEngineRunning) {
                 // Eğer kullanıcı butona basmışsa ve yeni bir şey yoksa
@@ -395,7 +398,12 @@
             earthquakes.forEach(eq => globalEarthquakeDates.add(eq.date));
 
             document.getElementById('loading').style.display = 'none';
-            document.getElementById('data-list').style.display = 'flex';
+            
+            if (!isPanelHidden) {
+                document.getElementById('data-list').style.display = 'flex';
+            } else {
+                updateShowPanelBtn();
+            }
 
             renderPlot(earthquakes, predictions);
             renderTable(earthquakes, predictions);
@@ -714,14 +722,33 @@
         }
 
         // --- Drag and Drop ve Gizleme Özellikleri ---
+        function updateShowPanelBtn() {
+            const btn = document.getElementById('show-panel-btn');
+            if (!btn) return;
+            
+            if (isPanelHidden) {
+                btn.style.display = 'block';
+                if (unseenEqCount > 0) {
+                    btn.innerHTML = `Sismik Aktiviteyi Göster <span style="background: #ff0000; color: #fff; padding: 2px 6px; border-radius: 10px; margin-left: 5px; font-size: 12px; font-weight: bold;">${unseenEqCount} Yeni</span>`;
+                } else {
+                    btn.innerHTML = `Sismik Aktiviteyi Göster`;
+                }
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+
         function hidePanel() {
+            isPanelHidden = true;
             document.getElementById('data-list').style.display = 'none';
-            document.getElementById('show-panel-btn').style.display = 'block';
+            updateShowPanelBtn();
         }
 
         function showPanel() {
+            isPanelHidden = false;
+            unseenEqCount = 0;
             document.getElementById('data-list').style.display = 'flex';
-            document.getElementById('show-panel-btn').style.display = 'none';
+            updateShowPanelBtn();
         }
 
         const dragElement = document.getElementById("data-list");
