@@ -655,7 +655,7 @@
                     difMag = (dMagVal > 0 ? '+' : '') + dMagVal.toFixed(1);
                 }
                 
-                rowsHtml += `<tr>
+                rowsHtml += `<tr style="cursor:pointer; transition: 0.2s;" onclick="highlightEarthquake(${d.lat}, ${d.lon}, ${d.depth}, '${shortDate}')" onmouseover="this.style.background='rgba(79, 172, 254, 0.15)'" onmouseout="this.style.background='transparent'">
                     <td>${dateLabel}</td>
                     <td>${d.lat.toFixed(4)}</td>
                     <td>${d.lon.toFixed(4)}</td>
@@ -680,6 +680,36 @@
                 </tr>`;
             }
             tbody.innerHTML = rowsHtml;
+        }
+
+        function highlightEarthquake(lat, lon, depth, dateStr) {
+            const graphDiv = document.getElementById('plot-container');
+            if (!graphDiv || !graphDiv.data) return;
+            
+            // Eski seçili noktayı bul ve sil
+            const existingIdx = graphDiv.data.findIndex(t => t.name === 'Seçilen Deprem');
+            if (existingIdx !== -1) {
+                Plotly.deleteTraces(graphDiv, existingIdx);
+            }
+            
+            const highlightTrace = {
+                x: [lon], y: [lat], z: [-depth],
+                mode: 'markers+text',
+                text: ['📍 Seçilen: ' + dateStr],
+                textposition: 'top center',
+                textfont: { color: '#ffea00', size: 12, weight: 'bold' },
+                marker: {
+                    size: 14,
+                    color: '#ffea00',
+                    symbol: 'diamond',
+                    line: { color: '#ff0000', width: 3 }
+                },
+                hoverinfo: 'skip',
+                type: 'scatter3d',
+                name: 'Seçilen Deprem'
+            };
+            
+            Plotly.addTraces(graphDiv, highlightTrace);
         }
 
         // --- Drag and Drop ve Gizleme Özellikleri ---
