@@ -271,7 +271,7 @@
         let currentEqCount = 0;
         let globalEarthquakeDates = new Set();
         let isEngineRunning = false;
-        let isPanelHidden = false;
+        let isPanelHidden = localStorage.getItem('panel_hidden') === 'true';
         let unseenEqCount = 0;
 
         function startCountdown() {
@@ -362,8 +362,12 @@
             renderPlot([], []);
             renderTable([], []);
             
-            // Paneli göster
-            document.getElementById('data-list').style.display = 'flex';
+            // Paneli önceki durumuna göre göster/gizle
+            if (isPanelHidden) {
+                hidePanel();
+            } else {
+                showPanel();
+            }
             
             await loadData(false);
             
@@ -785,12 +789,14 @@
 
         function hidePanel() {
             isPanelHidden = true;
+            localStorage.setItem('panel_hidden', 'true');
             document.getElementById('data-list').style.display = 'none';
             updateShowPanelBtn();
         }
 
         function showPanel() {
             isPanelHidden = false;
+            localStorage.setItem('panel_hidden', 'false');
             unseenEqCount = 0;
             document.getElementById('data-list').style.display = 'flex';
             updateShowPanelBtn();
