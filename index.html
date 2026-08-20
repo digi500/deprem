@@ -720,6 +720,7 @@
                 
                 let pLabel = '-', pLat = '-', pLon = '-', pDep = '-', pMag = '-';
                 let difTime = '-', difLat = '-', difLon = '-', difDep = '-', difMag = '-';
+                let kontrolZamanHtml = '-';
                 
                 if (matchedPred) {
                     pLabel = `Tahmin ${matchedPred.target_order}`;
@@ -731,6 +732,11 @@
                         // Always calculate live on frontend
                         let timeDiffMs = new Date(d.date).getTime() - new Date(matchedPred.pred_date).getTime();
                         difTime = formatTimeDiff(timeDiffMs);
+                    }
+                    
+                    if (matchedPred.pred_date && matchedPred.created_at) {
+                        let diffMs = new Date(matchedPred.pred_date).getTime() - new Date(matchedPred.created_at).getTime();
+                        kontrolZamanHtml = formatKontrolDuration(diffMs);
                     }
                     
                     pLat = matchedPred.pred_lat.toFixed(4);
