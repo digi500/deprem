@@ -25,10 +25,18 @@ def to_timestamp(dt_str):
     return dt.timestamp()
 
 def calculate_score(dist_err, mag_err, time_err_mins):
-    dist_score = max(0, 100 - (dist_err * 15))
-    mag_score = max(0, 100 - (mag_err * 50))
-    time_score = max(0, 100 - (time_err_mins / 5))
-    return (dist_score + mag_score + time_score) / 3.0
+    # Yeni Mantık: Büyüklük (Magnitude) %45, Zaman (Time) %45, Mesafe (Distance) %10 Etkili
+    
+    # Mesafe toleransı artırıldı (50 km'de sıfırlanır)
+    dist_score = max(0, 100 - (dist_err * 2.0)) 
+    
+    # Büyüklük toleransı (2.0 sapmada sıfırlanır)
+    mag_score = max(0, 100 - (mag_err * 50.0))
+    
+    # Zaman toleransı artırıldı (2000 dakikada, yani ~33 saatte sıfırlanır)
+    time_score = max(0, 100 - (time_err_mins / 20.0))
+    
+    return (mag_score * 0.45) + (time_score * 0.45) + (dist_score * 0.10)
 
 def predict_magnitude(recent_eqs):
     n_pts = len(recent_eqs)

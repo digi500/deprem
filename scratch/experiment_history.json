@@ -14,25 +14,25 @@
   {
     "version": "V3",
     "name": "Merkezcil \u00c7ekim (Clustering)",
-    "score": 34.7,
+    "score": 53.4,
     "date": "2026-08-19"
   },
   {
     "version": "V3a",
     "name": "V3 + Zaman B\u00fck\u00fcc\u00fc (Seismic Lock)",
-    "score": 34.0,
+    "score": 51.5,
     "date": "2026-08-20"
   },
   {
     "version": "V4",
     "name": "DBSCAN (Yo\u011funluk Odakl\u0131)",
-    "score": 33.2,
+    "score": 52.9,
     "date": "2026-08-20"
   },
   {
     "version": "V5",
     "name": "Markov Zincirleri (Grid Ge\u00e7i\u015f)",
-    "score": 34.6,
+    "score": 53.1,
     "date": "2026-08-20"
   }
 ]

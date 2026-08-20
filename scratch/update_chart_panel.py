@@ -1,4 +1,10 @@
-<!DOCTYPE html>
+import json
+
+# Read the generated history
+with open('c:\\deprem\\scratch\\experiment_history.json', 'r', encoding='utf-8') as f:
+    history = f.read()
+
+html = f"""<!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +13,7 @@
     <!-- Plotly.js -->
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <style>
-        body {
+        body {{
             background-color: #050510;
             color: #fff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -16,34 +22,34 @@
             display: flex;
             justify-content: center;
             min-height: 100vh;
-        }
-        .layout-wrapper {
+        }}
+        .layout-wrapper {{
             display: flex;
             gap: 20px;
             width: 100%;
             max-width: 1600px;
             box-sizing: border-box;
-        }
-        .panel {
+        }}
+        .panel {{
             background: rgba(15, 10, 25, 0.95);
             border: 1px solid rgba(255,0,255,0.4);
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 0 30px rgba(255,0,255,0.1);
-        }
-        .side-panel {
+        }}
+        .side-panel {{
             flex: 1;
             display: flex;
             flex-direction: column;
             gap: 20px;
             opacity: 0.9;
-        }
-        .center-panel {
+        }}
+        .center-panel {{
             flex: 2;
             display: flex;
             flex-direction: column;
-        }
-        h2 {
+        }}
+        h2 {{
             color: #ff00ff;
             margin-top: 0;
             border-bottom: 1px solid rgba(255,0,255,0.2);
@@ -51,18 +57,18 @@
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-        ul {
+        }}
+        ul {{
             padding-left: 20px;
             line-height: 1.7;
             color: #ccc;
-        }
-        li {
+        }}
+        li {{
             margin-bottom: 15px;
-        }
-        strong {
+        }}
+        strong {{
             color: #fff;
-        }
+        }}
     </style>
 </head>
 <body>
@@ -106,92 +112,59 @@
     </div>
 
     <script>
-        const historyData = [
-  {
-    "version": "V1",
-    "name": "Rastgele \u00dcretim",
-    "score": 25.4,
-    "date": "2026-08-16"
-  },
-  {
-    "version": "V2",
-    "name": "Lineer Regresyon",
-    "score": 48.2,
-    "date": "2026-08-18"
-  },
-  {
-    "version": "V3",
-    "name": "Merkezcil \u00c7ekim (Clustering)",
-    "score": 53.4,
-    "date": "2026-08-19"
-  },
-  {
-    "version": "V3a",
-    "name": "V3 + Zaman B\u00fck\u00fcc\u00fc (Seismic Lock)",
-    "score": 51.5,
-    "date": "2026-08-20"
-  },
-  {
-    "version": "V4",
-    "name": "DBSCAN (Yo\u011funluk Odakl\u0131)",
-    "score": 52.9,
-    "date": "2026-08-20"
-  },
-  {
-    "version": "V5",
-    "name": "Markov Zincirleri (Grid Ge\u00e7i\u015f)",
-    "score": 53.1,
-    "date": "2026-08-20"
-  }
-];
+        const historyData = {history};
         
         const versions = historyData.map(d => d.version);
         const names = historyData.map(d => d.name);
         const scores = historyData.map(d => d.score);
         
-        const trace = {
+        const trace = {{
             x: versions,
             y: scores,
             text: scores.map(s => s + '%'),
             textposition: 'auto',
             hovertext: names,
             type: 'bar',
-            marker: {
+            marker: {{
                 color: ['rgba(255,255,255,0.2)', 'rgba(79,172,254,0.5)', 'rgba(255,0,255,0.7)', 'rgba(0,255,100,0.7)', 'rgba(255,170,0,0.7)'],
-                line: {
+                line: {{
                     color: ['#fff', '#4facfe', '#ff00ff', '#00ff64', '#ffaa00'],
                     width: 2
-                }
-            }
-        };
+                }}
+            }}
+        }};
         
-        const traceLine = {
+        const traceLine = {{
             x: versions,
             y: scores,
             type: 'scatter',
             mode: 'lines+markers',
-            line: { color: '#fff', width: 3, dash: 'dot' },
-            marker: { size: 8, color: '#fff' }
-        };
+            line: {{ color: '#fff', width: 3, dash: 'dot' }},
+            marker: {{ size: 8, color: '#fff' }}
+        }};
 
-        const layout = {
-            title: { text: 'Model Başarı Puanları (%)', font: { color: '#fff' } },
+        const layout = {{
+            title: {{ text: 'Model Başarı Puanları (%)', font: {{ color: '#fff' }} }},
             paper_bgcolor: 'rgba(0,0,0,0)',
             plot_bgcolor: 'rgba(0,0,0,0)',
-            font: { color: '#aaa' },
-            xaxis: { 
+            font: {{ color: '#aaa' }},
+            xaxis: {{ 
                 title: 'Model Versiyonu',
                 gridcolor: 'rgba(255,255,255,0.1)'
-            },
-            yaxis: { 
+            }},
+            yaxis: {{ 
                 title: 'Başarı Yüzdesi (%)',
                 range: [0, 100],
                 gridcolor: 'rgba(255,255,255,0.1)'
-            },
+            }},
             showlegend: false
-        };
+        }};
 
-        Plotly.newPlot('chart-div', [trace, traceLine], layout, {responsive: true});
+        Plotly.newPlot('chart-div', [trace, traceLine], layout, {{responsive: true}});
     </script>
 </body>
 </html>
+"""
+
+with open('c:\\deprem\\ml_panel.html', 'w', encoding='utf-8') as f:
+    f.write(html)
