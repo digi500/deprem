@@ -49,6 +49,9 @@ def parse_data(html_content):
                 
                 # Parse date
                 eq_date = datetime.strptime(f"{date_str} {time_str}", "%Y.%m.%d %H:%M:%S")
+                # Kandilli verisi Türkiye saatidir (UTC+3)
+                timezone = timezone = __import__('datetime').timezone(__import__('datetime').timedelta(hours=3))
+                eq_date = eq_date.replace(tzinfo=timezone)
                 
                 earthquakes.append({
                     "date": eq_date.isoformat(),
