@@ -312,6 +312,34 @@
                         timerSpan.style.color = "#aaa";
                     }
                 }
+
+                // Kontrol Tablosundaki Canlı Tahmin Geri Sayımı
+                const kontrolCell = document.getElementById('live-kontrol-time');
+                if (kontrolCell) {
+                    const targetDateStr = kontrolCell.getAttribute('data-target');
+                    if (targetDateStr && targetDateStr !== 'undefined' && targetDateStr !== 'null') {
+                        const targetDate = new Date(targetDateStr);
+                        const diffMs = targetDate - now;
+                        const isPast = diffMs < 0;
+                        const absMs = Math.abs(diffMs);
+                        
+                        const h = Math.floor(absMs / (1000 * 60 * 60));
+                        const m = Math.floor((absMs % (1000 * 60 * 60)) / (1000 * 60));
+                        const s = Math.floor((absMs % (1000 * 60)) / 1000);
+                        
+                        const formatted = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                        
+                        if (isPast) {
+                            kontrolCell.innerText = "- " + formatted;
+                            kontrolCell.style.color = "#ff3232"; // Kırmızı
+                            kontrolCell.style.fontWeight = "bold";
+                        } else {
+                            kontrolCell.innerText = formatted;
+                            kontrolCell.style.color = "#00ff00"; // Yeşil (Gelecek)
+                            kontrolCell.style.fontWeight = "bold";
+                        }
+                    }
+                }
             }, 1000);
         }
         async function pollKandilli() {
@@ -680,7 +708,7 @@
                     <td style="border-bottom: none; padding: 0;"></td>
                     <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
                     <td style="border-bottom: none; padding: 0;"></td>
-                    <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+                    <td id="live-kontrol-time" data-target="${p.pred_date}">-</td><td>-</td><td>-</td><td>-</td><td>-</td>
                 </tr>`;
             }
             
