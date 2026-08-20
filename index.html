@@ -441,8 +441,9 @@
         }
 
         function renderPlot(data, allPredictions) {
-            // Haritada sadece bekleyen (gerçekleşmemiş) tahminleri göster
-            const predictions = allPredictions.filter(p => !p.matched_earthquake_id);
+            // Haritada sadece siradaki (1 adet) bekleyen tahmini göster (Tabloyla ayni)
+            const pendingPredictions = allPredictions.filter(p => !p.matched_earthquake_id);
+            const predictions = pendingPredictions.sort((a, b) => a.target_order - b.target_order).slice(0, 1);
             
             const lats = data.map(d => d.lat);
             const lons = data.map(d => d.lon);
