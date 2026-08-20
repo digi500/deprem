@@ -505,6 +505,39 @@
         }
 
         loadChart();
+
+        // Gerçek zamanlı (Realtime) abonelik - Yeni depremleri anında grafiklere ekle
+        supabaseClient
+            .channel('public:earthquakes')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'earthquakes' }, payload => {
+                const eq = payload.new;
+                
+                // Grafikler henüz hazır değilse işlem yapma
+                if (!myChart || !geoChart || !mapChart) return;
+                
+                const dateObj = new Date(eq.date);
+                const timeStr = dateObj.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) + " " + dateObj.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' });
+
+                // magChart Güncellemesi (0: Mag, 1: Depth)
+                myChart.data.datasets[0].data.push({ x: dateObj, y: eq.mag });
+                myChart.data.datasets[1].data.push({ x: dateObj, y: eq.depth });
+                myChart.update('none'); // 'none' parametresi Zoom/Pan state'ini korur
+
+                // geoChart Güncellemesi (0: Lat, 1: Lon)
+                geoChart.data.datasets[0].data.push({ x: dateObj, y: eq.lat });
+                geoChart.data.datasets[1].data.push({ x: dateObj, y: eq.lon });
+                geoChart.update('none');
+
+                // mapChart Güncellemesi
+                const newPointColor = eq.mag >= 3 ? '#ff3232' : (eq.mag >= 2 ? '#ffa500' : '#00ffff');
+                const newPointSize = Math.max(3, eq.mag * 2);
+
+                mapChart.data.datasets[0].data.push({ x: eq.lon, y: eq.lat, time: timeStr, mag: eq.mag });
+                mapChart.data.datasets[0].pointRadius.push(newPointSize);
+                mapChart.data.datasets[0].pointBackgroundColor.push(newPointColor);
+                mapChart.update('none');
+            })
+            .subscribe();
     </script>
 </body>
 </html>

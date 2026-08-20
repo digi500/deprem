@@ -260,12 +260,16 @@
                         </th>
                         <th style="border-bottom: none;"></th>
                         <th colspan="5" style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05);">Doğruluk/Yanlışlık</th>
+                        <th style="border-bottom: none;"></th>
+                        <th colspan="5" style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05);">Kontrol</th>
                     </tr>
                     <tr>
                         <th class="time-col">Zaman</th><th>Enlem</th><th>Boylam</th><th>Der.</th><th>Mag</th>
                         <th style="border-bottom: none; width: 30px; min-width: 30px;"></th> <!-- Ayırıcı Sütun 1 -->
                         <th class="time-col">Zaman</th><th>Enlem</th><th>Boylam</th><th>Der.</th><th>Mag</th>
                         <th style="border-bottom: none; width: 30px; min-width: 30px;"></th> <!-- Ayırıcı Sütun 2 -->
+                        <th class="time-col">Zaman</th><th>Enlem</th><th>Boylam</th><th>Der.</th><th>Mag</th>
+                        <th style="border-bottom: none; width: 30px; min-width: 30px;"></th> <!-- Ayırıcı Sütun 3 -->
                         <th class="time-col">Zaman</th><th>Enlem</th><th>Boylam</th><th>Der.</th><th>Mag</th>
                     </tr>
                 </thead>
@@ -675,6 +679,8 @@
                     <td>${p.pred_mag.toFixed(1)}</td>
                     <td style="border-bottom: none; padding: 0;"></td>
                     <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+                    <td style="border-bottom: none; padding: 0;"></td>
+                    <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
                 </tr>`;
             }
             
@@ -742,6 +748,14 @@
                     <td>${difLon}</td>
                     <td>${difDep}</td>
                     <td>${difMag}</td>
+
+                    <td style="border-bottom: none; padding: 0;"></td>
+                    
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>`;
             }
             tbody.innerHTML = rowsHtml;
