@@ -246,8 +246,7 @@ def update_system():
         # 4. 3D Tahmin Noktalarını Yerleştir
         last_eq = recent_eqs[-1]
         
-        remainder = N % 3
-        points_to_predict = 3 if remainder == 0 else (3 - remainder)
+        points_to_predict = 1 # Kullanıcı talebi: Sadece 1 tahmin üretilecek
         
         # V3 Merkezcil Çekim (Centroid Clustering) - Son 5 depremin ağırlık merkezi
         cluster_eqs = recent_eqs[-5:]
@@ -308,7 +307,7 @@ def update_system():
         
         # Supabase'e ekle
         for p in range(points_to_predict):
-            current_node = ((N + p) % 3) + 1
+            current_node = 1 # Sadece 1 tahmin üretildiği için hep (1) olarak etiketlensin
             
             # Değerlere (büyüklüğe) dayalı dinamik gecikme!
             # Her bir sonraki nokta için (p+1), mag_factor ile şekillenen bir zaman biç.
