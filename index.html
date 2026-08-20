@@ -617,6 +617,14 @@
             });
         }
 
+        function formatToLocalTime(dateStr) {
+            if (!dateStr) return "-";
+            let dObj = new Date(dateStr);
+            if (isNaN(dObj.getTime())) return dateStr;
+            let pad = (n) => String(n).padStart(2, '0');
+            return dObj.getFullYear() + "-" + pad(dObj.getMonth()+1) + "-" + pad(dObj.getDate()) + " " + pad(dObj.getHours()) + ":" + pad(dObj.getMinutes()) + ":" + pad(dObj.getSeconds());
+        }
+
         function formatTimeDiff(ms) {
             let sign = ms > 0 ? '+' : '';
             let absMs = Math.abs(ms);
@@ -641,9 +649,7 @@
                 let p = sortedPending[i];
                 let pLabel = `Tahmin ${p.target_order}`;
                 if (p.pred_date) {
-                    let dObj = new Date(p.pred_date);
-                    let ptStr = p.pred_date.includes('Z') ? dObj.toISOString().replace('T', ' ').substring(0, 19) : p.pred_date.replace('T', ' ').substring(0, 19);
-                    pLabel = `${ptStr} (${p.target_order})`;
+                    pLabel = `${formatToLocalTime(p.pred_date)} (${p.target_order})`;
                 }
                 
                 rowsHtml += `<tr>
@@ -676,9 +682,7 @@
                 if (matchedPred) {
                     pLabel = `Tahmin ${matchedPred.target_order}`;
                     if (matchedPred.pred_date) {
-                        let dObj = new Date(matchedPred.pred_date);
-                        let ptStr = matchedPred.pred_date.includes('Z') ? dObj.toISOString().replace('T', ' ').substring(0, 19) : matchedPred.pred_date.replace('T', ' ').substring(0, 19);
-                        pLabel = `${ptStr} (${matchedPred.target_order})`;
+                        pLabel = `${formatToLocalTime(matchedPred.pred_date)} (${matchedPred.target_order})`;
                     }
                     
                     if (matchedPred.error_time_mins !== undefined && matchedPred.error_time_mins !== null) {
