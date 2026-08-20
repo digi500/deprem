@@ -204,6 +204,7 @@ def predict_v6_language_model(all_past_eqs):
         lat_t = int(round(eq['latitude'] / 0.1))
         lon_t = int(round(eq['longitude'] / 0.1))
         mag_t = int(round(eq['magnitude'] / 0.2))
+        depth_t = int(round(eq.get('depth', 5.0) / 5.0))
         
         if prev_eq:
             dt1 = to_timestamp(eq['date'])
@@ -216,7 +217,7 @@ def predict_v6_language_model(all_past_eqs):
         else:
             t_t = 0
             
-        return f"L{lat_t}_{lon_t}_M{mag_t}_T{t_t}"
+        return f"L{lat_t}_{lon_t}_D{depth_t}_M{mag_t}_T{t_t}"
         
     tokens = []
     for i in range(len(all_past_eqs)):
@@ -247,9 +248,10 @@ def predict_v6_language_model(all_past_eqs):
     parts = best_next_tok.split('_')
     pred_lat = int(parts[0][1:]) * 0.1
     pred_lon = int(parts[1]) * 0.1
-    pred_mag = int(parts[2][1:]) * 0.2
+    # parts[2] is depth, but we don't return it for testing right now
+    pred_mag = int(parts[3][1:]) * 0.2
     
-    t_t = int(parts[3][1:])
+    t_t = int(parts[4][1:])
     if t_t == 0: delay = 30
     elif t_t == 1: delay = 3*60
     elif t_t == 2: delay = 12*60
@@ -279,6 +281,7 @@ def main():
                     'date': d.get('date'),
                     'latitude': float(d.get('latitude')),
                     'longitude': float(d.get('longitude')),
+                    'depth': float(d.get('depth', 5.0)),
                     'magnitude': mag
                 })
         except:
