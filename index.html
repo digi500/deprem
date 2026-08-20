@@ -579,8 +579,12 @@
                     aspectmode: 'cube'
                 }
             };
-
-            const config = { responsive: true, displayModeBar: true, displaylogo: false };
+            const config = { 
+                responsive: true, 
+                displayModeBar: true, 
+                displaylogo: false,
+                modeBarButtons: [['toImage']] // Sadece fotoğraf makinesini bırakır
+            };
             
             // newPlot yerine react kullanıyoruz (Ekranı titretemeden/sıfırlamadan günceller)
             Plotly.react('plot-container', [surface, traceRealMesh, tracePredMesh, trace, tracePredPoints], layout, config).then(function() {
