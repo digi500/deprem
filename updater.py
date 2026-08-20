@@ -284,10 +284,15 @@ def update_system():
             if not d_str: return datetime.now()
             return datetime.fromisoformat(d_str.replace('Z', '+00:00') if 'Z' in d_str else d_str)
 
+        gaps = []
         for i in range(len(sample) - 1):
-            total_gap += parse_d(sample[i+1]['date']) - parse_d(sample[i]['date'])
+            gap = parse_d(sample[i+1]['date']) - parse_d(sample[i]['date'])
+            gaps.append(gap)
+            total_gap += gap
             
-        avg_gap = total_gap / (len(sample) - 1) if len(sample) > 1 else timedelta(minutes=60)
+        avg_gap = total_gap / len(gaps) if gaps else timedelta(minutes=60)
+        max_gap = max(gaps) if gaps else timedelta(minutes=60)
+        
         base_time = parse_d(last_eq['date'])
         
         # Supabase'e ekle
@@ -298,12 +303,22 @@ def update_system():
             multiplier = p + 1
             raw_pred_time = base_time + (avg_gap * multiplier)
             
-            # Zamanın her zaman gelecekte olduğundan emin ol (Eğer motor çok beklediyse)
+            # Zamanın her zaman gelecekte olduğundan emin ol
             import datetime as dt_module
             current_time = dt_module.datetime.now(raw_pred_time.tzinfo)
             if raw_pred_time < current_time:
-                # Eğer tahmin geçmişte kalmışsa, şu anki zamana minimum 5 dk ekleyerek uyarla
-                pred_time = current_time + dt_module.timedelta(minutes=(5 * multiplier))
+                # Fay Kilitlenmesi (Seismic Lock) Mantığı:
+                # Beklenen süre geçtiyse stres birikir. 
+                # Yeni zaman = Şu an + (Gecikme süresinin %50'si) + (Tarihsel max_gap'in %20'si)
+                overdue_time = current_time - raw_pred_time
+                delay_factor = overdue_time * 0.5
+                dynamic_offset = delay_factor + (max_gap * 0.2) * multiplier
+                
+                # Eğer offset çok küçükse minimum 5 dk güvenlik payı ekle
+                if dynamic_offset < dt_module.timedelta(minutes=5):
+                    dynamic_offset = dt_module.timedelta(minutes=5 * multiplier)
+                    
+                pred_time = current_time + dynamic_offset
             else:
                 pred_time = raw_pred_time
 
