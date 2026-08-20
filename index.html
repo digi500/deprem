@@ -174,9 +174,8 @@
             max-width: 140px;
         }
         
-        #ml-panel-btn {
+        #ml-panel-btn, #ml-panel-btn-2 {
             position: absolute;
-            top: 15px;
             right: 60px;
             background: rgba(255, 0, 255, 0.15);
             border: 1px solid #ff00ff;
@@ -190,8 +189,20 @@
             backdrop-filter: blur(12px);
             transition: all 0.2s;
         }
+        #ml-panel-btn {
+            top: 15px;
+        }
+        #ml-panel-btn-2 {
+            top: 55px;
+            background: rgba(0, 255, 255, 0.15);
+            border: 1px solid #00ffff;
+            color: #00ffff;
+        }
         #ml-panel-btn:hover {
             background: rgba(255, 0, 255, 0.4);
+        }
+        #ml-panel-btn-2:hover {
+            background: rgba(0, 255, 255, 0.4);
         }
     </style>
 </head>
