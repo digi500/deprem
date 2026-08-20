@@ -296,7 +296,17 @@ def update_system():
             
             # Sırasıyla zamanı ileri at
             multiplier = p + 1
-            pred_time = base_time + (avg_gap * multiplier)
+            raw_pred_time = base_time + (avg_gap * multiplier)
+            
+            # Zamanın her zaman gelecekte olduğundan emin ol (Eğer motor çok beklediyse)
+            import datetime as dt_module
+            current_time = dt_module.datetime.now(raw_pred_time.tzinfo)
+            if raw_pred_time < current_time:
+                # Eğer tahmin geçmişte kalmışsa, şu anki zamana minimum 5 dk ekleyerek uyarla
+                pred_time = current_time + dt_module.timedelta(minutes=(5 * multiplier))
+            else:
+                pred_time = raw_pred_time
+
             
             new_pred = {
                 'target_order': current_node,
