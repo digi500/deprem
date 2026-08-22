@@ -322,6 +322,8 @@ def generate_html():
         tbody.innerHTML = rowsHtml;
         
     </script>
+    <!-- Canlı Ülke Bayraklı Ziyaretçi Sayacı -->
+    <script src="visitor-counter.js"></script>
 </body>
 </html>"""
     

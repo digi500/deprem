@@ -2,145 +2,231 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ML3 Paneli - Algoritma İzahnamesi</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>ML3 Paneli</title>
     <style>
         body {
-            font-family: 'Inter', sans-serif;
             background-color: #0d1117;
             color: #c9d1d9;
-            margin: 0;
-            padding: 40px;
-            display: flex;
-            justify-content: center;
-        }
-        
-        .container {
-            max-width: 900px;
-            width: 100%;
-            background: rgba(22, 27, 34, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 40px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-            backdrop-filter: blur(10px);
-        }
-
-        h1 {
-            color: #ffa500;
-            font-size: 28px;
-            margin-top: 0;
-            border-bottom: 2px solid rgba(255, 165, 0, 0.3);
-            padding-bottom: 15px;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .card {
-            background: rgba(0, 0, 0, 0.3);
-            border-left: 4px solid #58a6ff;
-            padding: 20px 25px;
-            margin-bottom: 25px;
-            border-radius: 0 8px 8px 0;
-            transition: transform 0.2s, background 0.2s;
-        }
-
-        .card:hover {
-            transform: translateX(5px);
-            background: rgba(0, 0, 0, 0.5);
-        }
-
-        .card h2 {
-            margin: 0 0 10px 0;
-            color: #58a6ff;
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .card p {
-            margin: 0;
-            line-height: 1.7;
-            color: #8b949e;
-            font-size: 15px;
-        }
-
-        .card strong {
-            color: #c9d1d9;
-        }
-
-        /* Specific Colors for specific metrics */
-        .card.time { border-left-color: #ff7b72; }
-        .card.time h2 { color: #ff7b72; }
-
-        .card.mag { border-left-color: #d2a8ff; }
-        .card.mag h2 { color: #d2a8ff; }
-
-        .card.loc { border-left-color: #7ee787; }
-        .card.loc h2 { color: #7ee787; }
-
-        .card.depth { border-left-color: #3fb950; }
-        .card.depth h2 { color: #3fb950; }
-
-        .tag {
-            display: inline-block;
-            padding: 2px 8px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 4px;
-            font-size: 12px;
-            margin-right: 5px;
-            margin-top: 10px;
             font-family: monospace;
+            font-size: 14px;
+            padding: 20px;
+        }
+        table {
+            border-collapse: collapse;
+        }
+        td {
+            padding: 4px 10px 4px 0;
+            vertical-align: top;
+            line-height: 1.6;
+        }
+        .col-name {
+            font-weight: bold;
+            white-space: nowrap;
+            padding-right: 5px;
+        }
+        .divider {
+            padding: 20px 0 10px 0;
+            color: #8b949e;
         }
     </style>
 </head>
 <body>
-
-    <div class="container">
-        <h1>Tahmin Motoru Mantığı (V3a)</h1>
+    <table>
+        <tr>
+            <td class="col-name">Zaman:</td>
+            <td>Son 10 deprem arasındaki ortalama geçen süre bulunuyor, Enerji Katsayısı ile çarpılarak bulunuyor.</td>
+        </tr>
+        <tr>
+            <td class="col-name">Büyüklük:</td>
+            <td>Son 3 depremin enerjisi, Genel Ortalama ile kıyaslanarak belirleniyor.</td>
+        </tr>
+        <tr>
+            <td class="col-name">Enlem:</td>
+            <td>Depremlerin Doğrusal Regresyon Yönü ile son 5 depremin Ağırlık Merkezi harmanlanarak bulunuyor.</td>
+        </tr>
+        <tr>
+            <td class="col-name">Boylam:</td>
+            <td>Enlem ile aynı şekilde regresyon ve ağırlık merkezi kullanılarak bulunuyor.</td>
+        </tr>
+        <tr>
+            <td class="col-name">Derinlik:</td>
+            <td>İlk ve son deprem arasındaki Derinlik Eğilimi hesaplanarak bulunuyor.</td>
+        </tr>
         
-        <div class="card time">
-            <h2>⏱️ Zaman (Tarih ve Saat)</h2>
-            <p>
-                <strong>Nasıl Tahmin Ediliyor?</strong> Zaman hesabı, son 10 deprem arasındaki ortalama geçen süre (Zaman Boşluğu - Gap) ile son depremin büyüklüğü (Enerji Katsayısı) çarpılarak hesaplanır.
-                <br><br>
-                Eğer son olan deprem büyükse, fayın enerjisi büyük ölçüde boşalmış kabul edilir ve bir sonraki deprem için tahmin süresi <strong>uzatılır (geciktirilir)</strong>. Ancak son deprem çok küçükse, enerjinin birikmeye devam ettiği varsayılır ve bir sonraki sarsıntının <strong>çok daha kısa sürede (örneğin 5-10 dk içinde)</strong> gerçekleşeceği tahmin edilir. Sistem çok kısa süreli artçı fırtınalarını yakalamak için minimum 5 dakika gecikme kuralı uygular.
-            </p>
-        </div>
+        <tr>
+            <td colspan="2" class="divider">--- DEĞİŞKEN HESAPLAMALARI ---</td>
+        </tr>
+        
+        <tr>
+            <td class="col-name">Enerji Katsayısı:</td>
+            <td>Son gerçekleşen depremin büyüklüğünün (mag) 1.5'e bölümünün karesi alınarak hesaplanıyor.</td>
+        </tr>
+        <tr>
+            <td class="col-name">Genel Ortalama:</td>
+            <td>Kayıtlı depremlerin büyüklüklerinin ortalaması alınarak hesaplanıyor.</td>
+        </tr>
+        <tr>
+            <td class="col-name">Doğrusal Regresyon Yönü:</td>
+            <td>Depremlerin enlem ve boylam noktalarından en küçük kareler yöntemiyle (matematiksel eğim formülü) geçen en uygun çizgi çizilerek hesaplanıyor.</td>
+        </tr>
+        <tr>
+            <td class="col-name">Ağırlık Merkezi:</td>
+            <td>Son 5 depremin enlem değerlerinin kendi içinde, boylam değerlerinin kendi içinde toplanıp 5'e bölünmesiyle (aritmetik ortalama) hesaplanıyor.</td>
+        </tr>
+        <tr>
+            <td class="col-name">Derinlik Eğilimi:</td>
+            <td>En son depremin derinliğinden en eski depremin derinliği çıkarılıp toplam deprem sayısına bölünerek hesaplanıyor.</td>
+        </tr>
+        
+        <tr>
+            <td colspan="2">
+                <div style="display: flex; gap: 60px; flex-wrap: wrap;">
+                    
+                    <!-- ZAMAN TAHMİNİ GRUBU -->
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <div class="divider" style="text-align: left; width: 100%; margin-top: 10px;">--- ZAMAN TAHMİNİ İÇİN ÖRNEK TESTLER ---</div>
+                        <div style="display: flex; gap: 40px; flex-wrap: wrap;">
+                            <!-- ÖRNEK 1 -->
+                            <div>
+                                <table style="border: 1px solid rgba(255,255,255,0.2); margin-bottom: 10px; color: #8b949e;">
+                                    <caption style="margin-bottom: 10px; font-size: 14px; font-weight: normal; color: #8b949e;">Örnek 1</caption>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                                        <th style="text-align: left; padding: 5px; font-weight: normal;">T</th>
+                                        <th style="text-align: center; padding: 5px; font-weight: normal;">2026-08-20 13:55</th>
+                                        <th style="text-align: center; padding: 5px; font-weight: normal;"></th>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05);">
+                                        <th style="text-align: left; padding: 5px; font-weight: normal;">N</th>
+                                        <th style="text-align: center; padding: 5px; font-weight: normal;">Z</th>
+                                        <th style="text-align: center; padding: 5px; font-weight: normal;">B</th>
+                                    </tr>
+                                    <tr><td style="padding: 5px;">1</td><td style="padding: 5px;">2026-08-20 13:00</td><td style="padding: 5px;">2.5</td></tr>
+                                    <tr><td style="padding: 5px;">2</td><td style="padding: 5px;">2026-08-20 12:40</td><td style="padding: 5px;">1.6</td></tr>
+                                    <tr><td style="padding: 5px;">3</td><td style="padding: 5px;">2026-08-20 12:15</td><td style="padding: 5px;">1.4</td></tr>
+                                    <tr><td style="padding: 5px;">4</td><td style="padding: 5px;">2026-08-20 11:55</td><td style="padding: 5px;">1.2</td></tr>
+                                    <tr><td style="padding: 5px;">5</td><td style="padding: 5px;">2026-08-20 11:40</td><td style="padding: 5px;">1.8</td></tr>
+                                    <tr><td style="padding: 5px;">6</td><td style="padding: 5px;">2026-08-20 11:10</td><td style="padding: 5px;">1.6</td></tr>
+                                    <tr><td style="padding: 5px;">7</td><td style="padding: 5px;">2026-08-20 11:00</td><td style="padding: 5px;">1.3</td></tr>
+                                    <tr><td style="padding: 5px;">8</td><td style="padding: 5px;">2026-08-20 10:35</td><td style="padding: 5px;">1.5</td></tr>
+                                    <tr><td style="padding: 5px;">9</td><td style="padding: 5px;">2026-08-20 10:15</td><td style="padding: 5px;">1.1</td></tr>
+                                    <tr><td style="padding: 5px;">10</td><td style="padding: 5px;">2026-08-20 10:00</td><td style="padding: 5px;">1.2</td></tr>
+                                </table>
+                                <div style="line-height: 1.6; color: #8b949e; font-weight: normal;">
+                                    O.S.: 10800 s / 9 = 1200 s<br>
+                                    E.K.: (2.5 / 1.5)² = 2.77<br>
+                                    D.G.: 1200 s x 2.77 = 3324 s
+                                </div>
+                            </div>
 
-        <div class="card mag">
-            <h2>📏 Büyüklük (Magnitude)</h2>
-            <p>
-                <strong>Nasıl Tahmin Ediliyor?</strong> Kümülatif sismik moment (enerji birikimi) izlenir. Tüm yakın geçmişteki depremlerin ortalama enerjisi ile sadece son 3 depremin enerjisi kıyaslanır.
-                <br><br>
-                Eğer son 3 depremin enerjisi genel ortalamanın %50'sinden daha az ise (Fay aşırı sessizleştiyse), fayda tehlikeli bir gerilim (Strain) biriktiği anlaşılır ve motor bir sonraki depremin büyüklüğünün <strong>ortalamadan 0.5 daha büyük</strong> olacağını tahmin eder. Eğer sadece ufak bir yavaşlama varsa <strong>+0.2 ekler</strong>. Eğer son deprem halihazırda ortalamadan büyükse, enerjinin boşaldığı anlaşılır ve motor bir sonraki tahmini <strong>artçı olarak (-0.3) düşürür</strong>.
-            </p>
-        </div>
+                            <!-- ÖRNEK 2 -->
+                            <div>
+                                <table style="border: 1px solid rgba(255,255,255,0.2); margin-bottom: 10px; color: #8b949e;">
+                                    <caption style="margin-bottom: 10px; font-size: 14px; font-weight: normal; color: #8b949e;">Örnek 2</caption>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                                        <th style="text-align: left; padding: 5px; font-weight: normal;">T</th>
+                                        <th style="text-align: center; padding: 5px; font-weight: normal;">2026-07-19 06:33</th>
+                                        <th style="text-align: center; padding: 5px; font-weight: normal;"></th>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05);">
+                                        <th style="text-align: left; padding: 5px; font-weight: normal;">N</th>
+                                        <th style="text-align: center; padding: 5px; font-weight: normal;">Z</th>
+                                        <th style="text-align: center; padding: 5px; font-weight: normal;">B</th>
+                                    </tr>
+                                    <tr><td style="padding: 5px;">1</td><td style="padding: 5px;">2026-07-01 23:45</td><td style="padding: 5px;">0.8</td></tr>
+                                    <tr><td style="padding: 5px;">2</td><td style="padding: 5px;">2026-03-15 09:22</td><td style="padding: 5px;">4.5</td></tr>
+                                    <tr><td style="padding: 5px;">3</td><td style="padding: 5px;">2026-01-15 14:11</td><td style="padding: 5px;">2.3</td></tr>
+                                    <tr><td style="padding: 5px;">4</td><td style="padding: 5px;">2025-12-01 01:54</td><td style="padding: 5px;">5.7</td></tr>
+                                    <tr><td style="padding: 5px;">5</td><td style="padding: 5px;">2025-11-01 19:05</td><td style="padding: 5px;">3.1</td></tr>
+                                    <tr><td style="padding: 5px;">6</td><td style="padding: 5px;">2025-08-01 11:27</td><td style="padding: 5px;">1.4</td></tr>
+                                    <tr><td style="padding: 5px;">7</td><td style="padding: 5px;">2025-05-15 08:33</td><td style="padding: 5px;">6.0</td></tr>
+                                    <tr><td style="padding: 5px;">8</td><td style="padding: 5px;">2025-04-01 22:10</td><td style="padding: 5px;">2.8</td></tr>
+                                    <tr><td style="padding: 5px;">9</td><td style="padding: 5px;">2025-03-01 15:42</td><td style="padding: 5px;">3.9</td></tr>
+                                    <tr><td style="padding: 5px;">10</td><td style="padding: 5px;">2025-01-01 03:14</td><td style="padding: 5px;">4.1</td></tr>
+                                </table>
+                                <div style="line-height: 1.6; color: #8b949e; font-weight: normal;">
+                                    O.S.: 47248260 s / 9 = 5249806.6 s<br>
+                                    E.K.: (0.8 / 1.5)² = 0.2844<br>
+                                    D.G.: 5249806.6 s x 0.2844 = 1493278 s
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-        <div class="card loc">
-            <h2>📍 Enlem ve Boylam (Lokasyon)</h2>
-            <p>
-                <strong>Nasıl Tahmin Ediliyor?</strong> Lokasyon tahmini için "Çift Yönlü Geometrik Analiz" kullanılır. 
-                <br><br>
-                1. <strong>Regresyon (Strike):</strong> Son depremlerin haritadaki dizilimi matematiksel olarak hesaplanır ve fayın bir sonraki kırılma yönü (Doğrultu) vektörel olarak uzatılır.<br>
-                2. <strong>Merkezcil Çekim (Kovan):</strong> Son 5 depremin ağırlık merkezi (Centroid) bulunur.<br><br>
-                Motor, bir sonraki tahmin noktasını belirlerken %70 oranında fayın gidiş yönüne doğru ilerler, ancak aşırı sapmayı (Overshoot) engellemek için %30 oranında kovan merkezine geri çeker. Bu hibrit yaklaşım, sürünün dağılmasını engeller.
-            </p>
-        </div>
+                    <!-- BÜYÜKLÜK TAHMİNİ GRUBU -->
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <div class="divider" style="text-align: left; width: 100%; margin-top: 10px;">--- BÜYÜKLÜK TAHMİNİ İÇİN ÖRNEK TESTLER ---</div>
+                        <div style="display: flex; gap: 40px; flex-wrap: wrap;">
+                            <!-- ÖRNEK 3 -->
+                            <div>
+                                <table style="border: 1px solid rgba(255,255,255,0.2); margin-bottom: 10px; color: #8b949e;">
+                                    <caption style="margin-bottom: 10px; font-size: 14px; font-weight: normal; color: #8b949e;">Örnek 3</caption>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                                        <th style="text-align: left; padding: 5px; font-weight: normal;">T</th>
+                                        <th style="text-align: center; padding: 5px; font-weight: normal;">1.2</th>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05);">
+                                        <th style="text-align: left; padding: 5px; font-weight: normal;">N</th>
+                                        <th style="text-align: center; padding: 5px; font-weight: normal;">B</th>
+                                    </tr>
+                                    <tr><td style="padding: 5px;">1</td><td style="padding: 5px;">2.5</td></tr>
+                                    <tr><td style="padding: 5px;">2</td><td style="padding: 5px;">1.6</td></tr>
+                                    <tr><td style="padding: 5px;">3</td><td style="padding: 5px;">1.4</td></tr>
+                                    <tr><td style="padding: 5px;">4</td><td style="padding: 5px;">1.2</td></tr>
+                                    <tr><td style="padding: 5px;">5</td><td style="padding: 5px;">1.8</td></tr>
+                                    <tr><td style="padding: 5px;">6</td><td style="padding: 5px;">1.6</td></tr>
+                                    <tr><td style="padding: 5px;">7</td><td style="padding: 5px;">1.3</td></tr>
+                                    <tr><td style="padding: 5px;">8</td><td style="padding: 5px;">1.5</td></tr>
+                                    <tr><td style="padding: 5px;">9</td><td style="padding: 5px;">1.1</td></tr>
+                                    <tr><td style="padding: 5px;">10</td><td style="padding: 5px;">1.2</td></tr>
+                                </table>
+                                <div style="line-height: 1.6; color: #8b949e; font-weight: normal;">
+                                    Genel Ort. Büyüklük: 1.52<br>
+                                    Genel Ort. Enerji: 718.7<br>
+                                    Son 3 Ort. Enerji: 1999.6<br>
+                                    Durum: Enerji Boşalması (1999.6 > 359)<br>
+                                    Tahmin: 1.52 - 0.3 = 1.2
+                                </div>
+                            </div>
 
-        <div class="card depth">
-            <h2>⬇️ Derinlik (Depth)</h2>
-            <p>
-                <strong>Nasıl Tahmin Ediliyor?</strong> Depremlerin dikey düzlemdeki hareket eğilimi (Dip - Eğim) hesaplanır. 
-                <br><br>
-                Kayıtlı en eski deprem ile en yeni depremin derinlikleri arasındaki fark alınır ve adım sayısına bölünerek "Ortalama Derinlik Eğilimi" bulunur. Eğer depremler yüzeye doğru tırmanıyorsa bir sonraki tahmin daha sığ bir noktaya, eğer derine doğru iniyorsa daha derin bir noktaya yansıtılır.
-            </p>
-        </div>
+                            <!-- ÖRNEK 4 -->
+                            <div>
+                                <table style="border: 1px solid rgba(255,255,255,0.2); margin-bottom: 10px; color: #8b949e;">
+                                    <caption style="margin-bottom: 10px; font-size: 14px; font-weight: normal; color: #8b949e;">Örnek 4</caption>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                                        <th style="text-align: left; padding: 5px; font-weight: normal;">T</th>
+                                        <th style="text-align: center; padding: 5px; font-weight: normal;">4.0</th>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05);">
+                                        <th style="text-align: left; padding: 5px; font-weight: normal;">N</th>
+                                        <th style="text-align: center; padding: 5px; font-weight: normal;">B</th>
+                                    </tr>
+                                    <tr><td style="padding: 5px;">1</td><td style="padding: 5px;">0.8</td></tr>
+                                    <tr><td style="padding: 5px;">2</td><td style="padding: 5px;">4.5</td></tr>
+                                    <tr><td style="padding: 5px;">3</td><td style="padding: 5px;">2.3</td></tr>
+                                    <tr><td style="padding: 5px;">4</td><td style="padding: 5px;">5.7</td></tr>
+                                    <tr><td style="padding: 5px;">5</td><td style="padding: 5px;">3.1</td></tr>
+                                    <tr><td style="padding: 5px;">6</td><td style="padding: 5px;">1.4</td></tr>
+                                    <tr><td style="padding: 5px;">7</td><td style="padding: 5px;">6.0</td></tr>
+                                    <tr><td style="padding: 5px;">8</td><td style="padding: 5px;">2.8</td></tr>
+                                    <tr><td style="padding: 5px;">9</td><td style="padding: 5px;">3.9</td></tr>
+                                    <tr><td style="padding: 5px;">10</td><td style="padding: 5px;">4.1</td></tr>
+                                </table>
+                                <div style="line-height: 1.6; color: #8b949e; font-weight: normal;">
+                                    Genel Ort. Büyüklük: 3.46<br>
+                                    Genel Ort. Enerji: 136.262.075<br>
+                                    Son 3 Ort. Enerji: 1.875.415<br>
+                                    Durum: Sismik Sessizlik (1.8M < 68M)<br>
+                                    Tahmin: 3.46 + 0.5 = 4.0
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-    </div>
-
+                </div>
+            </td>
+        </tr>
+    </table>
+    <!-- Canlı Ülke Bayraklı Ziyaretçi Sayacı -->
+    <script src="visitor-counter.js"></script>
 </body>
 </html>
