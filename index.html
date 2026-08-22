@@ -6,21 +6,52 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <title>3D Deprem Simülasyonu</title>
+    <title>Marmara Deprem Simülasyonu & Yapay Zeka Canlı Tahmin Sistemi (3D)</title>
+    <meta name="description" content="Kandilli Rasathanesi canlı verileriyle Marmara Bölgesi 3D deprem derinlik simülasyonu, gerilim transferi analizi ve yapay zeka destekli anlık deprem tahmin sistemi.">
+    <meta name="keywords" content="marmara depremi, deprem tahmin, kandilli canlı, deprem simülasyonu 3d, yapay zeka deprem analizi, deprem haritası, fay hatları, son depremler">
+    <meta name="author" content="Deprem Analiz & Simülasyon Laboratuvarı">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://deprem.vercel.app/">
+    <meta property="og:title" content="Marmara Deprem Simülasyonu & Yapay Zeka Canlı Tahmin Sistemi">
+    <meta property="og:description" content="Kandilli Rasathanesi canlı verileriyle Marmara 3D fay ve derinlik analizi, sismik enerji gerilim modeli ve yapay zeka tahminleri.">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1584905066893-7d5c142ba4e1?q=80&w=1200&auto=format&fit=crop">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://deprem.vercel.app/">
+    <meta name="twitter:title" content="Marmara Deprem Simülasyonu & Yapay Zeka Canlı Tahmin Sistemi">
+    <meta name="twitter:description" content="Kandilli Rasathanesi canlı verileriyle 3D fay derinlik simülasyonu ve anlık yapay zeka deprem tahmin sistemi.">
+    <meta name="twitter:image" content="https://images.unsplash.com/photo-1584905066893-7d5c142ba4e1?q=80&w=1200&auto=format&fit=crop">
+
+    <!-- Schema.org JSON-LD Structure -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Marmara Deprem Simülasyonu & AI Tahmin Sistemi",
+      "url": "https://deprem.vercel.app/",
+      "description": "Kandilli Rasathanesi verileriyle Marmara Bölgesi 3D interaktif deprem analizi ve makine öğrenimi tahmin modeli.",
+      "applicationCategory": "EducationalApplication, ScientificSoftware",
+      "operatingSystem": "All"
+    }
+    </script>
+
     <!-- Plotly.js -->
     <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Kullanıcının dahiyane fikri: Vercel cache'ini kırmak için otomatik zaman damgası (timestamp) yönlendirmesi
+        // Vercel cache'ini kırmak için otomatik zaman damgası (arama motoru botlarını etkilemeden)
         (function() {
+            const isBot = /bot|crawler|spider|google|bing/i.test(navigator.userAgent);
+            if (isBot) return;
             const urlParams = new URLSearchParams(window.location.search);
             const currentTime = new Date().getTime();
             let v = urlParams.get('v');
-            
-            // Eğer ?v parametresi yoksa veya 5 saniyeden eskiyse, en güncel zaman damgasıyla sayfayı yeniden yükle
-            if (!v || (currentTime - parseInt(v)) > 5000) {
-                // Sadece pathname'i alarak temiz bir yönlendirme yap
+            if (!v || (currentTime - parseInt(v)) > 10000) {
                 window.location.replace(window.location.pathname + '?v=' + currentTime);
             }
         })();

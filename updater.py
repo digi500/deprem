@@ -12,6 +12,31 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+def send_social_alert(title: str, message: str):
+    """Telegram veya Webhook entegrasyonu (Ortam değişkenleri ayarlandığında otomatik bildirim gönderir)"""
+    tg_token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    tg_chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+    webhook_url = os.environ.get("WEBHOOK_ALERT_URL")
+
+    if tg_token and tg_chat_id:
+        try:
+            import requests
+            tg_url = f"https://api.telegram.org/bot{tg_token}/sendMessage"
+            requests.post(tg_url, json={
+                "chat_id": tg_chat_id,
+                "text": f"🚨 *{title}*\n\n{message}",
+                "parse_mode": "Markdown"
+            }, timeout=5)
+        except Exception as e:
+            print("Telegram alert error:", e)
+
+    if webhook_url:
+        try:
+            import requests
+            requests.post(webhook_url, json={"title": title, "message": message}, timeout=5)
+        except Exception as e:
+            print("Webhook alert error:", e)
+
 def haversine(lat1, lon1, lat2, lon2):
     # Dünya yarıçapı km
     R = 6371.0
@@ -164,6 +189,12 @@ def update_system():
             }).eq('id', pred['id']).execute()
             
             print(f"Tahmin değerlendirildi! ({real_eq['date']} -> Tahmin {pred['target_order']}) Sapma: {dist_error:.2f} km")
+            send_social_alert(
+                "Deprem Gerçekleşti & Tahmin Eşleşti",
+                f"📍 Konum: {real_eq['lat']}, {real_eq['lon']} (Derinlik: {real_eq['depth']} km)\n"
+                f"💥 Büyüklük: {real_eq['mag']} (Tahmin: {pred.get('pred_mag', '-')})\n"
+                f"🎯 Sapma: {dist_error:.2f} km | Büyüklük Farkı: {mag_error:.2f}"
+            )
             
             # Eğer tek seferde 1'den fazla deprem geldiyse, açıkta kalan diğer tahminleri SİL (İptal et)
             # Böylece hemen ardından yeni güncel duruma (son depreme) göre taze 3 tahmin üretilebilir.
@@ -354,6 +385,13 @@ def update_system():
                 'pred_date': pred_time.isoformat()
             }
             supabase.table('predictions').insert(new_pred).execute()
+            send_social_alert(
+                "Yeni Yapay Zeka Deprem Tahmini Üretildi",
+                f"🎯 Hedef: Nokta {current_node}\n"
+                f"📍 Tahmini Konum: {selected_coord['lat']:.2f}, {selected_coord['lon']:.2f} (Derinlik: {selected_coord['depth']:.1f} km)\n"
+                f"💥 Tahmini Büyüklük: M{pred_mag:.1f}\n"
+                f"⏰ Beklenen Zaman: {pred_time.strftime('%Y-%m-%d %H:%M:%S')}"
+            )
         
         print(f"{points_to_predict} yeni tahmin veritabanına eklendi.")
     else:
