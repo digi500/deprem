@@ -1,0 +1,26 @@
+name: E-Posta Bildirim Testi
+
+on:
+  push:
+    paths:
+      - 'test_email.py'
+  workflow_dispatch:
+
+jobs:
+  test-email:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Repoyu klonla
+      uses: actions/checkout@v3
+
+    - name: Python kurulumu
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Test E-Postasını Gönder
+      env:
+        SMTP_EMAIL: ${{ secrets.SMTP_EMAIL }}
+        SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      run: python test_email.py
