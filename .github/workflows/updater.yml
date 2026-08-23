@@ -24,4 +24,7 @@ jobs:
         pip install supabase websockets==15.0 requests beautifulsoup4
         
     - name: Tahmin Motorunu (Updater) Çalıştır
+      env:
+        SMTP_EMAIL: ${{ secrets.SMTP_EMAIL }}
+        SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
       run: python updater.py

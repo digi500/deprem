@@ -12,6 +12,40 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+def send_email_alert(subject: str, html_content: str):
+    """Gmail SMTP üzerinden belirtilen alıcılara HTML formatında uyarı e-postası gönderir."""
+    smtp_email = os.environ.get("SMTP_EMAIL", "digitalist500@gmail.com")
+    smtp_password = os.environ.get("SMTP_PASSWORD")
+    
+    if not smtp_password:
+        print("Bilgi: SMTP_PASSWORD tanımlı olmadığı için e-posta gönderimi atlandı.")
+        return
+
+    # Boşlukları otomatik temizle (Kullanıcı boşluklu veya boşluksuz yapıştırsa da çalışır)
+    smtp_password = smtp_password.replace(" ", "").strip()
+
+    recipients = ["digitalist500@gmail.com", "filizyilmaz2008@gmail.com"]
+
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = f"Marmara Deprem AI Botu <{smtp_email}>"
+        msg["To"] = ", ".join(recipients)
+        msg["Subject"] = subject
+        msg.attach(MIMEText(html_content, "html", "utf-8"))
+
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(smtp_email, smtp_password)
+            server.sendmail(smtp_email, recipients, msg.as_string())
+
+        print(f"E-posta başarıyla gönderildi -> {', '.join(recipients)}")
+    except Exception as e:
+        print("E-posta gönderim hatası:", e)
+
 def send_social_alert(title: str, message: str):
     """Telegram veya Webhook entegrasyonu (Ortam değişkenleri ayarlandığında otomatik bildirim gönderir)"""
     tg_token = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -392,6 +426,46 @@ def update_system():
                 f"💥 Tahmini Büyüklük: M{pred_mag:.1f}\n"
                 f"⏰ Beklenen Zaman: {pred_time.strftime('%Y-%m-%d %H:%M:%S')}"
             )
+            
+            # Mag >= 4.0 ise e-posta uyarısı gönder
+            if pred_mag >= 4.0:
+                email_subject = f"🚨 KRİTİK DEPREM TAHMİNİ: M{pred_mag:.1f} (Marmara AI)"
+                email_html = f"""
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: auto;">
+                    <div style="background-color: #d9534f; color: white; padding: 12px; border-radius: 6px; text-align: center;">
+                        <h2 style="margin: 0; font-size: 20px;">🚨 KRİTİK DEPREM TAHMİNİ UYARISI</h2>
+                    </div>
+                    <p style="margin-top: 15px;">Marmara Deprem Simülasyonu & AI Tahmin Motoru kritik eşiği (<strong>M4.0+</strong>) aşan yeni bir sismik tahmin üretti:</p>
+                    
+                    <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 15px;">
+                        <tr style="background: #fdf2f2;">
+                            <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #eee; width: 45%;">💥 Tahmini Büyüklük:</td>
+                            <td style="padding: 10px; color: #d9534f; font-weight: bold; font-size: 18px; border-bottom: 1px solid #eee;">M{pred_mag:.1f}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #eee;">📍 Tahmini Koordinat:</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #eee;">{selected_coord['lat']:.3f}° K, {selected_coord['lon']:.3f}° D</td>
+                        </tr>
+                        <tr style="background: #f9f9f9;">
+                            <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #eee;">🌊 Tahmini Derinlik:</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #eee;">{selected_coord['depth']:.1f} km</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #eee;">⏰ Beklenen Zaman (TSİ):</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>{pred_time.strftime('%Y-%m-%d %H:%M:%S')}</strong></td>
+                        </tr>
+                        <tr style="background: #f9f9f9;">
+                            <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #eee;">🎯 Fay Kırılma Segmenti:</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #eee;">Nokta {current_node}</td>
+                        </tr>
+                    </table>
+                    
+                    <p style="font-size: 12px; color: #888; border-top: 1px solid #eee; padding-top: 12px; margin-bottom: 0;">
+                        Bu otomatik bilgilendirme Kandilli Rasathanesi canlı verileri ve gerilim transferi algoritmaları kullanan Marmara AI Tahmin Sistemi tarafından oluşturulmuştur.
+                    </p>
+                </div>
+                """
+                send_email_alert(email_subject, email_html)
         
         print(f"{points_to_predict} yeni tahmin veritabanına eklendi.")
     else:
