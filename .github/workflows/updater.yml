@@ -2,19 +2,24 @@ name: Deprem Tahmin Motoru (Updater)
 
 on:
   # schedule:
-  #   - cron: '*/5 * * * *' # Her 5 dakikada bir calistir (Gecici olarak durduruldu)
-  workflow_dispatch: # Manuel olarak tetiklenebilmesi icin
+  #   - cron: '*/10 * * * *' # Her 10 dakikada bir çalıştır (Görev 3 bitince açılacak)
+  workflow_dispatch: # Manuel olarak tetiklenebilmesi için
+
+concurrency:
+  group: updater
+  cancel-in-progress: false
 
 jobs:
   update-database:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     
     steps:
     - name: Repoyu klonla
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       
     - name: Python kurulumu
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.12'
         
@@ -25,6 +30,8 @@ jobs:
         
     - name: Tahmin Motorunu (Updater) Çalıştır
       env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         SMTP_EMAIL: ${{ secrets.SMTP_EMAIL }}
         SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
       run: python updater.py

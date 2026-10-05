@@ -23,8 +23,8 @@ def to_naive(dt_str):
         dt = dt.replace(tzinfo=None)
     return dt
 
-url = 'https://tiykapksaboucamusmbk.supabase.co'
-key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpeWthcGtzYWJvdWNhbXVzbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxNjUyMjEsImV4cCI6MjEwMjc0MTIyMX0.D2YkQaF5Gfn49bsRpuoi3W1upoFfhGxdFQ-pBRW6IAM'
+url = os.environ.get("SUPABASE_URL", "https://tiykapksaboucamusmbk.supabase.co")
+key = os.environ.get("SUPABASE_ANON_KEY", "sb_publishable_glP1jkA0oEH7K2aT3gKm3g_SrF60ERz")
 supabase = create_client(url, key)
 
 res = supabase.table('earthquakes').select('*').order('date', desc=False).execute()

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://deprem-delta.vercel.app/sitemap.xml
+Sitemap: https://digi500.github.io/deprem/sitemap.xml

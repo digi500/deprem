@@ -6,9 +6,12 @@ import math
 from supabase import create_client, Client
 from fetch_data import fetch_kandilli_data # Assuming this returns the raw JSON list or we can just run it.
 
-# Proje yapılandırması
-SUPABASE_URL = "https://tiykapksaboucamusmbk.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpeWthcGtzYWJvdWNhbXVzbWJrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzE2NTIyMSwiZXhwIjoyMTAyNzQxMjIxfQ.D_dVAm0ueAw4-bODs1zt4UMR3LZZxvrBVYgfqG6V4tI"
+# Proje yapılandırması (Ortam değişkenlerinden okunur)
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise ValueError("HATA: SUPABASE_URL veya SUPABASE_SERVICE_KEY ortam değişkenleri tanımlanmamış!")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -84,17 +87,38 @@ def haversine(lat1, lon1, lat2, lon2):
 def update_system():
     print("Sistem güncelleniyor...")
     
-    # 1. Kandilli'den verileri çek (fetch_data.py içindeki API'den)
+    # 1. Kandilli'den verileri çek
     import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util import Retry
     from bs4 import BeautifulSoup
 
     url = 'http://www.koeri.boun.edu.tr/scripts/lst4.asp'
-    response = requests.get(url)
-    response.encoding = 'windows-1254'
+    
+    session = requests.Session()
+    retries = Retry(
+        total=3,
+        backoff_factor=1,
+        status_forcelist=[500, 502, 503, 504],
+        raise_on_status=False
+    )
+    session.mount('http://', HTTPAdapter(max_retries=retries))
+    session.mount('https://', HTTPAdapter(max_retries=retries))
+
+    try:
+        response = session.get(url, timeout=15)
+        response.encoding = 'windows-1254'
+        if response.status_code != 200:
+            print(f"Uyarı: Kandilli HTTP {response.status_code} döndürdü.")
+            return
+    except Exception as e:
+        print(f"Uyarı: Kandilli Rasathanesi'ne ulaşılamadı ({e}). Bir sonraki çalıştırmada tekrar denenecek.")
+        return
+
     soup = BeautifulSoup(response.text, 'html.parser')
     pre_tag = soup.find('pre')
     if not pre_tag:
-        print("Kandilli verisi alınamadı.")
+        print("Kandilli verisi alınamadı (pre etiketi bulunamadı).")
         return
 
     lines = pre_tag.text.split('\n')
@@ -149,8 +173,12 @@ def update_system():
     latest_eq_id = None
     
     # Supabase'deki mevcut depremleri al
-    existing_eqs_res = supabase.table('earthquakes').select('date, lat, lon').execute()
-    existing_set = set(f"{e['date']}_{e['lat']}_{e['lon']}" for e in existing_eqs_res.data)
+    try:
+        existing_eqs_res = supabase.table('earthquakes').select('date, lat, lon').execute()
+        existing_set = set(f"{e['date']}_{e['lat']}_{e['lon']}" for e in existing_eqs_res.data)
+    except Exception as e:
+        print(f"Hata: Supabase veritabanı sorgulanamadı ({e}). Veritabanı bağlantısını ve ortam değişkenlerini kontrol edin.")
+        raise
 
     new_eqs_this_run = []
     

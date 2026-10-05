@@ -2,3 +2,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 .env
+
+# Claude-Gemini kopru (yerel)
+.ortak/
+.claude/
+GEMINI.md

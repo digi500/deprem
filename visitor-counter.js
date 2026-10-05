@@ -4,7 +4,7 @@
  */
 (function() {
     const SUPABASE_URL = "https://tiykapksaboucamusmbk.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpeWthcGtzYWJvdWNhbXVzbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxNjUyMjEsImV4cCI6MjEwMjc0MTIyMX0.D2YkQaF5Gfn49bsRpuoi3W1upoFfhGxdFQ-pBRW6IAM";
+    const SUPABASE_ANON_KEY = "sb_publishable_glP1jkA0oEH7K2aT3gKm3g_SrF60ERz";
 
     const regionNames = (typeof Intl !== 'undefined' && Intl.DisplayNames) ? new Intl.DisplayNames(['tr'], { type: 'region' }) : null;
 
@@ -244,7 +244,10 @@
 
         async function detectClientCountry() {
             try {
-                const res = await fetch('https://ipapi.co/json/');
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                const res = await fetch('https://ipapi.co/json/', { signal: controller.signal });
+                clearTimeout(timeoutId);
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.country_code) {
@@ -256,52 +259,15 @@
         }
 
         async function fetchStats(increment = false) {
-            let detectedCountry = '';
-            if (increment && !isTrackingDoneInSession) {
-                detectedCountry = await detectClientCountry();
-            }
+            const baseHeaders = {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            };
 
-            // 1. Vercel API'yi dene (Varsa Edge IP tespiti ile çok hızlı çalışır)
+            // 1. Önce güncel sayıları hemen çek ve ekrana bas (gecikmesiz)
             try {
-                const queryParam = detectedCountry ? `&country=${detectedCountry}` : '';
-                const apiUrl = `/api/counter?track=${increment && !isTrackingDoneInSession ? 'true' : 'false'}${queryParam}&t=${Date.now()}`;
-                const res = await fetch(apiUrl);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (increment) {
-                        sessionStorage.setItem('vc_tracked', '1');
-                        isTrackingDoneInSession = true;
-                    }
-                    renderStats(data);
-                    return;
-                }
-            } catch (e) {}
-
-            // 2. Doğrudan Supabase REST API Fallback (Localhost veya Vercel harici ortamlarda)
-            try {
-                const headers = {
-                    'apikey': SUPABASE_ANON_KEY,
-                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                    'Content-Type': 'application/json'
-                };
-
-                if (increment && !isTrackingDoneInSession) {
-                    if (!detectedCountry) detectedCountry = await detectClientCountry();
-                    try {
-                        await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_visitor`, {
-                            method: 'POST',
-                            headers: headers,
-                            body: JSON.stringify({ p_country_code: detectedCountry })
-                        });
-                        sessionStorage.setItem('vc_tracked', '1');
-                        isTrackingDoneInSession = true;
-                    } catch (rpcErr) {
-                        console.error("Direct RPC Error:", rpcErr);
-                    }
-                }
-
-                const tableRes = await fetch(`${SUPABASE_URL}/rest/v1/visitor_counts?select=*&order=count.desc&t=${Date.now()}`, {
-                    headers: headers
+                const tableRes = await fetch(`${SUPABASE_URL}/rest/v1/visitor_counts?select=*&order=count.desc`, {
+                    headers: baseHeaders
                 });
 
                 if (tableRes.ok) {
@@ -321,11 +287,55 @@
                     renderStats({
                         total: total || 1,
                         countries: countries,
-                        visitorCountry: detectedCountry || 'TR'
+                        visitorCountry: 'TR'
                     });
                 }
             } catch (err) {
-                console.warn("Visitor counter load error:", err);
+                console.warn("Visitor counter load warning:", err);
+            }
+
+            // 2. Yeni ziyaretçi ise arkaplanda ülkesini bul ve sayıyı 1 artır
+            if (increment && !isTrackingDoneInSession) {
+                try {
+                    const detectedCountry = await detectClientCountry();
+                    await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_visitor`, {
+                        method: 'POST',
+                        headers: {
+                            ...baseHeaders,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ p_country_code: detectedCountry })
+                    });
+                    sessionStorage.setItem('vc_tracked', '1');
+                    isTrackingDoneInSession = true;
+
+                    // Arttırma sonrası tekrar güncelle
+                    const updatedRes = await fetch(`${SUPABASE_URL}/rest/v1/visitor_counts?select=*&order=count.desc`, {
+                        headers: baseHeaders
+                    });
+                    if (updatedRes.ok) {
+                        const rows = await updatedRes.json();
+                        let countries = {};
+                        let total = 0;
+                        if (Array.isArray(rows)) {
+                            for (const row of rows) {
+                                const c = (row.country_code || '').toUpperCase();
+                                const cnt = Number(row.count) || 0;
+                                if (c && cnt > 0) {
+                                    countries[c] = cnt;
+                                    total += cnt;
+                                }
+                            }
+                        }
+                        renderStats({
+                            total: total || 1,
+                            countries: countries,
+                            visitorCountry: detectedCountry || 'TR'
+                        });
+                    }
+                } catch (rpcErr) {
+                    console.warn("Visitor tracking warning:", rpcErr);
+                }
             }
         }
 

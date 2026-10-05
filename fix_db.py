@@ -1,8 +1,11 @@
 import os
 from supabase import create_client, Client
 
-SUPABASE_URL = "https://tiykapksaboucamusmbk.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpeWthcGtzYWJvdWNhbXVzbWJrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzE2NTIyMSwiZXhwIjoyMTAyNzQxMjIxfQ.D_dVAm0ueAw4-bODs1zt4UMR3LZZxvrBVYgfqG6V4tI"
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise ValueError("HATA: SUPABASE_URL veya SUPABASE_SERVICE_KEY ortam değişkenleri tanımlanmamış!")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
